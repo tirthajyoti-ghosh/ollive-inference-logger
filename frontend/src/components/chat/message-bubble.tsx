@@ -1,76 +1,73 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { relativeTime } from "@/lib/utils";
-import { User, Sparkles, Copy, Check } from "lucide-react";
+import { cn, relativeTime } from "@/lib/utils";
+import { User, Sparkles, Copy, Check, Clock, ArrowDown, ArrowUp } from "lucide-react";
 import { useState, useCallback } from "react";
 import type { ChatMessage } from "@/hooks/use-chat";
 
-/** Basic markdown-like rendering: bold, italic, inline code, code blocks */
-function renderContent(content: string) {
-  // Split on code blocks first
-  const parts = content.split(/(```[\s\S]*?```)/g);
+function renderMarkdown(text: string) {
+  const blocks = text.split(/(```[\s\S]*?```)/g);
 
-  return parts.map((part, i) => {
-    // Code block
-    if (part.startsWith("```") && part.endsWith("```")) {
-      const inner = part.slice(3, -3);
-      const newlineIdx = inner.indexOf("\n");
-      const lang = newlineIdx >= 0 ? inner.slice(0, newlineIdx).trim() : "";
-      const code = newlineIdx >= 0 ? inner.slice(newlineIdx + 1) : inner;
+  return blocks.map((block, i) => {
+    if (block.startsWith("```") && block.endsWith("```")) {
+      const inner = block.slice(3, -3);
+      const nl = inner.indexOf("\n");
+      const lang = nl >= 0 ? inner.slice(0, nl).trim() : "";
+      const code = nl >= 0 ? inner.slice(nl + 1) : inner;
       return (
-        <pre
+        <div
           key={i}
-          className="mt-2.5 mb-2.5 rounded-[10px] overflow-hidden text-xs font-mono"
-          style={{ border: "1px solid var(--border)", background: "var(--surface-2)" }}
+          className="my-3 rounded-[10px] overflow-hidden"
+          style={{ border: "1px solid var(--border)", background: "oklch(0.985 0.005 80)" }}
         >
-          {/* Header bar */}
           <div
-            className="flex items-center justify-between px-3 py-1.5 text-[11px]"
-            style={{ background: "var(--bg-2)", borderBottom: "1px solid var(--border)", color: "var(--muted-foreground)" }}
+            className="px-3 py-1.5 flex items-center justify-between text-[11px] font-mono"
+            style={{ background: "var(--bg-2)", color: "var(--muted-foreground)", borderBottom: "1px solid var(--border)" }}
           >
             <span>{lang || "code"}</span>
             <CopyButton text={code} />
           </div>
-          <code className="block px-3 py-2.5 overflow-x-auto" style={{ color: "var(--ink)" }}>
-            {code}
-          </code>
-        </pre>
+          <pre
+            className="px-4 py-3 text-[12.5px] font-mono leading-relaxed overflow-x-auto"
+            style={{ color: "oklch(0.32 0.02 80)" }}
+          >
+            {code.replace(/\n$/, "")}
+          </pre>
+        </div>
       );
     }
 
-    // Inline formatting
-    return (
-      <span key={i}>
-        {part.split(/(`[^`]+`)/g).map((segment, j) => {
-          if (segment.startsWith("`") && segment.endsWith("`")) {
+    return block.split(/\n\n/).map((para, j) => {
+      const parts = para.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).filter(Boolean);
+      return (
+        <p key={`${i}-${j}`} className="text-[14px] leading-[1.65] mb-3 last:mb-0" style={{ color: "var(--ink)" }}>
+          {parts.map((p, k) => {
+            if (p.startsWith("`") && p.endsWith("`")) {
+              return (
+                <code
+                  key={k}
+                  className="font-mono text-[12.5px] px-1 py-0.5 rounded"
+                  style={{ background: "var(--bg-2)", color: "var(--olive-fg)", border: "1px solid var(--border)" }}
+                >
+                  {p.slice(1, -1)}
+                </code>
+              );
+            }
+            if (p.startsWith("**") && p.endsWith("**")) {
+              return <strong key={k} className="font-semibold" style={{ color: "var(--ink)" }}>{p.slice(2, -2)}</strong>;
+            }
+            const lines = p.split(/\n/);
             return (
-              <code
-                key={j}
-                className="rounded-md px-1.5 py-0.5 text-xs font-mono"
-                style={{ background: "var(--olive-soft)", color: "var(--olive-fg)" }}
-              >
-                {segment.slice(1, -1)}
-              </code>
+              <span key={k}>
+                {lines.map((ln, m) => (
+                  <span key={m}>{ln}{m < lines.length - 1 && <br />}</span>
+                ))}
+              </span>
             );
-          }
-
-          // Bold
-          let result: React.ReactNode = segment;
-          const boldParts = segment.split(/(\*\*[^*]+\*\*)/g);
-          if (boldParts.length > 1) {
-            result = boldParts.map((bp, k) => {
-              if (bp.startsWith("**") && bp.endsWith("**")) {
-                return <strong key={k}>{bp.slice(2, -2)}</strong>;
-              }
-              return bp;
-            });
-          }
-
-          return <span key={j}>{result}</span>;
-        })}
-      </span>
-    );
+          })}
+        </p>
+      );
+    });
   });
 }
 
@@ -85,91 +82,71 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="btn-ghost btn-sm inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px]"
+      className="flex items-center gap-1 hover:opacity-70 transition-opacity"
       style={{ color: "var(--muted-foreground)" }}
     >
       {copied ? <Check size={11} /> : <Copy size={11} />}
-      {copied ? "Copied" : "Copy"}
+      <span className="text-[10.5px]">{copied ? "copied" : "copy"}</span>
     </button>
   );
 }
 
-export function MessageBubble({ message }: { message: ChatMessage }) {
+export function MessageBubble({ message, isStreaming }: { message: ChatMessage; isStreaming?: boolean }) {
   const isUser = message.role === "user";
 
   return (
-    <div
-      className={cn(
-        "flex gap-3 max-w-[85%]",
-        isUser ? "ml-auto flex-row-reverse" : "mr-auto"
+    <div className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}>
+      {/* Assistant avatar (left) */}
+      {!isUser && (
+        <div
+          className="w-7 h-7 shrink-0 rounded-[8px] grid place-items-center mt-0.5"
+          style={{ background: "var(--olive-soft)", color: "var(--olive-fg)" }}
+        >
+          <Sparkles size={14} />
+        </div>
       )}
-    >
-      {/* Avatar */}
-      <div
-        className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
-        )}
-        style={
-          isUser
-            ? { background: "oklch(0.55 0.08 235)", color: "#fff" }
-            : { background: "var(--olive-soft)", color: "var(--olive-fg)" }
-        }
-      >
-        {isUser ? (
-          <User className="h-3.5 w-3.5" />
-        ) : (
-          <Sparkles className="h-3.5 w-3.5" />
-        )}
-      </div>
 
-      {/* Content */}
-      <div className="min-w-0">
+      <div className="max-w-[680px]">
         {isUser ? (
-          /* User bubble */
           <div
-            className="px-4 py-3 text-sm leading-relaxed"
+            className="inline-block"
             style={{
-              borderRadius: "14px 14px 4px 14px",
               background: "var(--surface)",
               border: "1px solid var(--border)",
+              borderRadius: "14px 14px 4px 14px",
+              padding: "10px 14px",
               boxShadow: "var(--shadow-sm)",
-              color: "var(--ink)",
             }}
           >
-            <div className="whitespace-pre-wrap break-words">
-              {renderContent(message.content)}
+            <div className="text-[14px] leading-[1.6] whitespace-pre-wrap" style={{ color: "var(--ink)" }}>
+              {message.content}
             </div>
           </div>
         ) : (
-          /* Assistant: no bubble, just rendered markdown */
-          <div className="text-sm leading-relaxed" style={{ color: "var(--ink)" }}>
-            <div className="whitespace-pre-wrap break-words">
-              {renderContent(message.content)}
-              {message.streaming && message.content.length > 0 && (
-                <span className="caret" />
-              )}
-            </div>
+          <div>
+            {renderMarkdown(message.content)}
+            {isStreaming && <span className="caret" />}
           </div>
         )}
 
-        {/* Meta line under messages */}
-        {!message.streaming && (
-          <div
-            className={cn(
-              "mt-1.5 flex items-center gap-3 font-mono text-[11px]",
-              isUser ? "justify-end" : "justify-start"
-            )}
-            style={{ color: "var(--faint)" }}
-          >
+        {/* Meta line under finalized assistant messages */}
+        {!isUser && !isStreaming && !message.streaming && message.content && (
+          <div className="flex items-center gap-3 mt-2 text-[11px] font-mono" style={{ color: "var(--faint)" }}>
             <span>{relativeTime(message.created_at)}</span>
-            {!isUser && (
-              <>
-                <CopyButton text={message.content} />
-              </>
-            )}
+            <CopyButton text={message.content} />
           </div>
         )}
       </div>
+
+      {/* User avatar (right) */}
+      {isUser && (
+        <div
+          className="w-7 h-7 shrink-0 rounded-[8px] grid place-items-center mt-0.5"
+          style={{ background: "oklch(0.93 0.03 235)", color: "oklch(0.4 0.1 235)" }}
+        >
+          <User size={14} />
+        </div>
+      )}
     </div>
   );
 }
