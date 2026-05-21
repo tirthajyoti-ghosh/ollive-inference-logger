@@ -6,19 +6,11 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ProviderBreakdown as PB } from "@/lib/api";
 
-const COLORS = [
-  "oklch(0.72 0.15 230)",
-  "oklch(0.70 0.17 160)",
-  "oklch(0.70 0.15 290)",
-  "oklch(0.75 0.15 55)",
-  "oklch(0.65 0.20 25)",
-];
+const COLORS = ["#f59e0b", "#38bdf8", "#a78bfa", "#34d399", "#fb7185"];
 
 interface ProviderBreakdownProps {
   data: PB[];
@@ -28,59 +20,73 @@ interface ProviderBreakdownProps {
 export function ProviderBreakdownChart({ data, loading }: ProviderBreakdownProps) {
   if (loading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-32 mb-4" />
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </Card>
+      <div className="glass-card rounded-2xl p-6">
+        <Skeleton className="h-4 w-32 mb-4 bg-white/5" />
+        <Skeleton className="h-64 w-full rounded-xl bg-white/5" />
+      </div>
     );
   }
 
   const chartData = data.map((d) => ({
-    name: d.provider,
+    name: d.provider.charAt(0).toUpperCase() + d.provider.slice(1),
     value: d.count,
   }));
 
+  const total = chartData.reduce((s, d) => s + d.value, 0);
+
   return (
-    <Card className="p-5">
-      <h3 className="text-sm font-medium mb-4">Provider Breakdown</h3>
-      <div className="h-64">
+    <div className="glass-card rounded-2xl p-6">
+      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Provider Breakdown</h3>
+      <div className="h-52">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={90}
-              paddingAngle={3}
+              innerRadius={55}
+              outerRadius={80}
+              paddingAngle={4}
               dataKey="value"
+              strokeWidth={0}
             >
               {chartData.map((_, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={COLORS[index % COLORS.length]}
-                  stroke="oklch(0.17 0.015 260)"
-                  strokeWidth={2}
                 />
               ))}
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: "oklch(0.17 0.015 260)",
-                border: "1px solid oklch(0.28 0.015 260)",
-                borderRadius: "8px",
+                backgroundColor: "rgba(12,12,17,0.9)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: "12px",
                 fontSize: "12px",
+                boxShadow: "0 8px 32px -8px rgba(0,0,0,0.6)",
               }}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: "11px" }}
-              formatter={(value: string) => (
-                <span style={{ color: "oklch(0.85 0.005 260)" }}>{value}</span>
-              )}
             />
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+      {/* Custom legend */}
+      <div className="flex flex-col gap-2.5 mt-3">
+        {chartData.map((entry, i) => (
+          <div key={entry.name} className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: COLORS[i % COLORS.length] }}
+              />
+              <span className="text-[12px] text-foreground/70 font-medium">{entry.name}</span>
+            </div>
+            <span className="text-[12px] font-mono font-semibold text-foreground/90">
+              {total > 0 ? Math.round((entry.value / total) * 100) : 0}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

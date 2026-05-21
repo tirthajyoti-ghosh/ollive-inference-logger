@@ -9,7 +9,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeseriesPoint } from "@/lib/api";
 
@@ -26,55 +25,64 @@ function formatTick(timestamp: unknown) {
 export function VolumeChart({ data, loading }: VolumeChartProps) {
   if (loading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-32 mb-4" />
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </Card>
+      <div className="glass-card rounded-2xl p-6">
+        <Skeleton className="h-4 w-32 mb-4 bg-white/5" />
+        <Skeleton className="h-64 w-full rounded-xl bg-white/5" />
+      </div>
     );
   }
 
   return (
-    <Card className="p-5">
-      <h3 className="text-sm font-medium mb-4">Request Volume</h3>
+    <div className="glass-card rounded-2xl p-6">
+      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Request Volume</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="volumeGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.72 0.15 230)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="oklch(0.72 0.15 230)" stopOpacity={0} />
+                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.2} />
+                <stop offset="60%" stopColor="#f59e0b" stopOpacity={0.05} />
+                <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.015 260)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTick}
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={{ fontSize: 10, fill: "#71717a" }}
+              stroke="rgba(255,255,255,0.04)"
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={{ fontSize: 10, fill: "#71717a" }}
+              stroke="rgba(255,255,255,0.04)"
+              tickLine={false}
+              axisLine={false}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "oklch(0.17 0.015 260)",
-                border: "1px solid oklch(0.28 0.015 260)",
-                borderRadius: "8px",
+                backgroundColor: "rgba(12,12,17,0.9)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: "12px",
                 fontSize: "12px",
+                boxShadow: "0 8px 32px -8px rgba(0,0,0,0.6)",
               }}
               labelFormatter={formatTick}
             />
             <Area
               type="monotone"
               dataKey="value"
-              stroke="oklch(0.72 0.15 230)"
+              stroke="#f59e0b"
               strokeWidth={2}
               fill="url(#volumeGrad)"
+              dot={false}
+              activeDot={{ r: 4, fill: "#f59e0b", stroke: "#07070a", strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }

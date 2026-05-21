@@ -13,7 +13,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeseriesPoint, ErrorBreakdown } from "@/lib/api";
 
@@ -23,18 +22,24 @@ function formatTick(timestamp: unknown) {
 }
 
 const tooltipStyle = {
-  backgroundColor: "oklch(0.17 0.015 260)",
-  border: "1px solid oklch(0.28 0.015 260)",
-  borderRadius: "8px",
+  backgroundColor: "rgba(12,12,17,0.9)",
+  backdropFilter: "blur(12px)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: "12px",
   fontSize: "12px",
+  boxShadow: "0 8px 32px -8px rgba(0,0,0,0.6)",
 };
 
+const axisTick = { fontSize: 10, fill: "#71717a" };
+
+const activeDot = { r: 4, fill: "#f59e0b", stroke: "#07070a", strokeWidth: 2 };
+
 const ERROR_COLORS = [
-  "oklch(0.65 0.20 25)",
-  "oklch(0.75 0.15 55)",
-  "oklch(0.70 0.15 290)",
-  "oklch(0.72 0.15 230)",
-  "oklch(0.70 0.17 160)",
+  "#fb7185",
+  "#f59e0b",
+  "#38bdf8",
+  "#a78bfa",
+  "#34d399",
 ];
 
 interface ErrorRateChartProps {
@@ -45,29 +50,31 @@ interface ErrorRateChartProps {
 export function ErrorRateChart({ data, loading }: ErrorRateChartProps) {
   if (loading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-40 mb-4" />
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </Card>
+      <div className="glass-card rounded-2xl p-6">
+        <Skeleton className="h-4 w-40 mb-5 bg-white/5" />
+        <Skeleton className="h-64 w-full rounded-lg bg-white/5" />
+      </div>
     );
   }
 
   return (
-    <Card className="p-5">
-      <h3 className="text-sm font-medium mb-4">Error Rate Over Time</h3>
+    <div className="glass-card rounded-2xl p-6">
+      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Error Rate Over Time</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.015 260)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTick}
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={axisTick}
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={axisTick}
+              tickLine={false}
+              axisLine={false}
               tickFormatter={(v: number) => `${(v * 100).toFixed(1)}%`}
             />
             <Tooltip
@@ -78,15 +85,16 @@ export function ErrorRateChart({ data, loading }: ErrorRateChartProps) {
             <Line
               type="monotone"
               dataKey="value"
-              stroke="oklch(0.65 0.20 25)"
+              stroke="#fb7185"
               strokeWidth={2}
               dot={false}
+              activeDot={activeDot}
               name="Error Rate"
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -98,10 +106,10 @@ interface ErrorBreakdownChartProps {
 export function ErrorBreakdownChart({ data, loading }: ErrorBreakdownChartProps) {
   if (loading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-40 mb-4" />
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </Card>
+      <div className="glass-card rounded-2xl p-6">
+        <Skeleton className="h-4 w-40 mb-5 bg-white/5" />
+        <Skeleton className="h-64 w-full rounded-lg bg-white/5" />
+      </div>
     );
   }
 
@@ -111,8 +119,8 @@ export function ErrorBreakdownChart({ data, loading }: ErrorBreakdownChartProps)
   }));
 
   return (
-    <Card className="p-5">
-      <h3 className="text-sm font-medium mb-4">Error Type Breakdown</h3>
+    <div className="glass-card rounded-2xl p-6">
+      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Error Type Breakdown</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -129,7 +137,7 @@ export function ErrorBreakdownChart({ data, loading }: ErrorBreakdownChartProps)
                 <Cell
                   key={`cell-${index}`}
                   fill={ERROR_COLORS[index % ERROR_COLORS.length]}
-                  stroke="oklch(0.17 0.015 260)"
+                  stroke="rgba(12,12,17,0.9)"
                   strokeWidth={2}
                 />
               ))}
@@ -138,12 +146,12 @@ export function ErrorBreakdownChart({ data, loading }: ErrorBreakdownChartProps)
             <Legend
               wrapperStyle={{ fontSize: "11px" }}
               formatter={(value: string) => (
-                <span style={{ color: "oklch(0.85 0.005 260)" }}>{value}</span>
+                <span style={{ color: "rgba(255,255,255,0.7)" }}>{value}</span>
               )}
             />
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }

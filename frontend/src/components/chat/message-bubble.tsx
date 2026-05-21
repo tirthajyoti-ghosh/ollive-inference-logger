@@ -19,7 +19,7 @@ function renderContent(content: string) {
       return (
         <pre
           key={i}
-          className="mt-2 mb-2 rounded-lg bg-black/30 p-3 text-xs overflow-x-auto font-mono"
+          className="mt-2 mb-2 rounded-xl bg-black/40 border border-white/[0.04] p-3 text-xs overflow-x-auto font-mono"
         >
           <code>{code}</code>
         </pre>
@@ -34,7 +34,7 @@ function renderContent(content: string) {
             return (
               <code
                 key={j}
-                className="rounded bg-black/20 px-1.5 py-0.5 text-xs font-mono text-primary"
+                className="bg-white/[0.06] rounded-md px-1.5 py-0.5 text-xs font-mono text-primary"
               >
                 {segment.slice(1, -1)}
               </code>
@@ -75,8 +75,8 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
         className={cn(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
           isUser
-            ? "bg-primary/20 text-primary"
-            : "bg-emerald-500/15 text-emerald-400"
+            ? "bg-primary/[0.12] text-primary border border-primary/[0.08]"
+            : "bg-emerald-500/[0.10] text-emerald-400 border border-emerald-500/[0.08]"
         )}
       >
         {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
@@ -87,8 +87,8 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
         className={cn(
           "rounded-2xl px-4 py-3 text-sm leading-relaxed",
           isUser
-            ? "bg-primary/15 text-foreground"
-            : "bg-card border border-border text-foreground"
+            ? "bg-primary/[0.08] border border-primary/[0.12] text-foreground"
+            : "glass-card text-foreground"
         )}
       >
         <div className="whitespace-pre-wrap break-words">
@@ -98,7 +98,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
           )}
         </div>
         {!message.streaming && (
-          <p className="mt-1.5 text-[10px] text-muted-foreground">
+          <p className="mt-1.5 text-[10px] text-muted-foreground/60">
             {relativeTime(message.created_at)}
           </p>
         )}

@@ -28,45 +28,60 @@ export default function DashboardOverviewPage() {
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <KpiCard
-          label="Total Requests"
-          value={data ? formatNumber(data.kpis.total_requests) : "-"}
-          icon={Activity}
-          iconColor="text-primary"
-          loading={loading}
-        />
-        <KpiCard
-          label="Avg Latency"
-          value={data ? formatLatency(data.kpis.avg_latency_ms) : "-"}
-          icon={Clock}
-          iconColor="text-amber-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Error Rate"
-          value={data ? `${data.kpis.error_rate.toFixed(2)}%` : "-"}
-          icon={AlertTriangle}
-          iconColor="text-red-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Total Tokens"
-          value={data ? formatNumber(data.kpis.total_tokens) : "-"}
-          icon={Hash}
-          iconColor="text-emerald-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Est. Cost"
-          value={data ? formatCurrency(data.kpis.total_cost_usd) : "-"}
-          icon={Coins}
-          iconColor="text-violet-400"
-          loading={loading}
-        />
+        <div className="stagger-1">
+          <KpiCard
+            label="Total Requests"
+            value={data ? formatNumber(data.kpis.total_requests) : "-"}
+            icon={Activity}
+            iconColor="text-primary"
+            glowColor="rgba(245,158,11,0.06)"
+            loading={loading}
+          />
+        </div>
+        <div className="stagger-2">
+          <KpiCard
+            label="Avg Latency"
+            value={data ? formatLatency(data.kpis.avg_latency_ms) : "-"}
+            icon={Clock}
+            iconColor="text-sky-400"
+            glowColor="rgba(56,189,248,0.05)"
+            loading={loading}
+          />
+        </div>
+        <div className="stagger-3">
+          <KpiCard
+            label="Error Rate"
+            value={data ? `${data.kpis.error_rate.toFixed(2)}%` : "-"}
+            icon={AlertTriangle}
+            iconColor="text-rose-400"
+            glowColor="rgba(244,63,94,0.04)"
+            loading={loading}
+          />
+        </div>
+        <div className="stagger-4">
+          <KpiCard
+            label="Total Tokens"
+            value={data ? formatNumber(data.kpis.total_tokens) : "-"}
+            icon={Hash}
+            iconColor="text-emerald-400"
+            glowColor="rgba(52,211,153,0.04)"
+            loading={loading}
+          />
+        </div>
+        <div className="stagger-5">
+          <KpiCard
+            label="Est. Cost"
+            value={data ? formatCurrency(data.kpis.total_cost_usd) : "-"}
+            icon={Coins}
+            iconColor="text-violet-400"
+            glowColor="rgba(167,139,250,0.04)"
+            loading={loading}
+          />
+        </div>
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up stagger-6">
         <div className="lg:col-span-2">
           <VolumeChart
             data={data?.volume_timeseries ?? []}

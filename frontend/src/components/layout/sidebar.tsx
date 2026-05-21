@@ -2,112 +2,116 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { Sheet } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import {
   MessageSquare,
   List,
   BarChart3,
   Menu,
-  X,
-  Sparkles,
+  Zap,
 } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 
-const NAV_ITEMS = [
+const NAV = [
   { href: "/chat", label: "Chat", icon: MessageSquare },
   { href: "/conversations", label: "Conversations", icon: List },
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
 ] as const;
 
-function NavLinks({ onClick }: { onClick?: () => void }) {
+function NavContent() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1">
-      {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-        const active =
-          pathname === href || pathname.startsWith(href + "/");
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={onClick}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-              active
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            {label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-/** Desktop sidebar — always visible at md+ */
-function DesktopSidebar() {
-  return (
-    <aside className="hidden md:flex md:w-56 lg:w-64 flex-col border-r border-sidebar-border bg-sidebar shrink-0 h-screen sticky top-0">
+    <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15">
-          <Sparkles className="h-4 w-4 text-primary" />
-        </div>
-        <span className="text-lg font-semibold tracking-tight">Ollive</span>
+      <div className="px-5 pt-6 pb-8">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10 group-hover:bg-primary/15 transition-colors">
+            <Zap className="h-[18px] w-[18px] text-primary" />
+            <div className="absolute inset-0 rounded-xl glow-amber-subtle opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <div>
+            <span className="text-[15px] font-semibold tracking-tight text-foreground">
+              Ollive
+            </span>
+            <span className="block text-[10px] font-medium text-muted-foreground tracking-widest uppercase">
+              Inference Logger
+            </span>
+          </div>
+        </Link>
       </div>
 
-      {/* Links */}
-      <div className="flex-1 px-3">
-        <NavLinks />
-      </div>
+      {/* Navigation */}
+      <nav className="flex-1 px-3 space-y-1">
+        {NAV.map((item) => {
+          const isActive =
+            pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`
+                relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium
+                transition-all duration-200
+                ${
+                  isActive
+                    ? "text-primary bg-primary/[0.08] nav-active-bar"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/[0.03]"
+                }
+              `}
+            >
+              <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+              {item.label}
+              {isActive && (
+                <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-primary pulse-live" />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
 
       {/* Footer */}
-      <div className="px-5 py-4 border-t border-sidebar-border">
-        <p className="text-[11px] text-muted-foreground">Inference Logger</p>
+      <div className="px-5 py-5 border-t border-border/50">
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-emerald-500 pulse-live" />
+          <span className="text-[11px] text-muted-foreground font-medium">
+            System Online
+          </span>
+        </div>
       </div>
-    </aside>
-  );
-}
-
-/** Mobile slide-out sidebar */
-function MobileSidebar() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="md:hidden fixed top-0 left-0 z-40 p-3">
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger
-          className="inline-flex items-center justify-center rounded-lg h-9 w-9 hover:bg-muted transition-colors"
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0 bg-sidebar">
-          <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <div className="flex items-center gap-2.5 px-5 py-5 border-b border-sidebar-border">
-            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15">
-              <Sparkles className="h-4 w-4 text-primary" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">Ollive</span>
-          </div>
-          <div className="px-3 py-4">
-            <NavLinks onClick={() => setOpen(false)} />
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
 
 export function Sidebar() {
+  const [open, setOpen] = useState(false);
+
   return (
     <>
-      <DesktopSidebar />
-      <MobileSidebar />
+      {/* Mobile toggle */}
+      <div className="fixed top-4 left-4 z-50 md:hidden">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-9 w-9 rounded-xl glass"
+          onClick={() => setOpen(true)}
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Mobile sheet */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <div className="w-64 h-full bg-sidebar border-r border-sidebar-border">
+          <NavContent />
+        </div>
+      </Sheet>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex md:w-56 lg:w-60 shrink-0 flex-col border-r border-border/40 bg-sidebar/50 backdrop-blur-sm sticky top-0 h-screen">
+        <NavContent />
+      </aside>
     </>
   );
 }

@@ -7,7 +7,6 @@ import {
   LatencyByModelChart,
 } from "@/components/dashboard/latency-chart";
 import { TimeRangeSelector } from "@/components/dashboard/time-range-selector";
-import { Card } from "@/components/ui/card";
 import { formatLatency } from "@/lib/utils";
 
 export default function LatencyPage() {
@@ -20,39 +19,31 @@ export default function LatencyPage() {
         <TimeRangeSelector hours={hours} onChange={setHours} />
       </div>
 
-      {/* Percentile timeseries */}
+      {/* Overall stats */}
+      {data?.overall && (
+        <div className="grid grid-cols-4 gap-4 animate-fade-up">
+          {[
+            { label: "P50", value: data.overall.p50, color: "text-primary" },
+            { label: "P95", value: data.overall.p95, color: "text-sky-400" },
+            { label: "P99", value: data.overall.p99, color: "text-rose-400" },
+            { label: "Average", value: data.overall.avg, color: "text-foreground" },
+          ].map((stat) => (
+            <div key={stat.label} className="glass-card rounded-2xl p-5 text-center">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+              <p className={`text-xl font-bold font-mono metric-value mt-2 ${stat.color}`}>
+                {formatLatency(stat.value)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       <LatencyTimeseriesChart
         data={data?.timeseries ?? []}
         loading={loading}
       />
 
-      {/* By provider/model */}
       <LatencyByModelChart data={data?.by_provider ?? []} loading={loading} />
-
-      {/* Overall stats */}
-      {data?.overall && (
-        <Card className="p-5">
-          <h3 className="text-sm font-medium mb-4">Overall Latency Percentiles</h3>
-          <div className="grid grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-xs text-muted-foreground">P50</p>
-              <p className="text-lg font-semibold tabular-nums">{formatLatency(data.overall.p50)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">P95</p>
-              <p className="text-lg font-semibold tabular-nums text-amber-400">{formatLatency(data.overall.p95)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">P99</p>
-              <p className="text-lg font-semibold tabular-nums text-red-400">{formatLatency(data.overall.p99)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Average</p>
-              <p className="text-lg font-semibold tabular-nums">{formatLatency(data.overall.avg)}</p>
-            </div>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

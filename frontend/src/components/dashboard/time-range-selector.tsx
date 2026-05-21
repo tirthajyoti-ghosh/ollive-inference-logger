@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const RANGES = [
@@ -17,22 +16,20 @@ interface TimeRangeSelectorProps {
 
 export function TimeRangeSelector({ hours, onChange }: TimeRangeSelectorProps) {
   return (
-    <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+    <div className="glass rounded-xl p-1 flex items-center gap-0.5">
       {RANGES.map(({ label, hours: h }) => (
-        <Button
+        <button
           key={h}
-          variant="ghost"
-          size="sm"
           className={cn(
-            "h-7 px-3 text-xs font-medium rounded-md",
+            "px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all",
             hours === h
-              ? "bg-background text-foreground shadow-sm"
+              ? "bg-primary/10 text-primary shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           )}
           onClick={() => onChange(h)}
         >
           {label}
-        </Button>
+        </button>
       ))}
     </div>
   );

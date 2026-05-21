@@ -44,7 +44,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="border-t border-border bg-background/80 backdrop-blur-sm p-4">
+    <div className="glass border-t border-white/[0.04] p-4">
       <div className="flex items-end gap-2 max-w-3xl mx-auto">
         <div className="relative flex-1">
           <textarea
@@ -58,9 +58,9 @@ export function ChatInput({
             placeholder="Type a message... (Shift+Enter for newline)"
             disabled={disabled}
             rows={1}
-            className="w-full resize-none rounded-xl border border-border bg-card px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:opacity-50"
+            className="w-full resize-none rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/30 disabled:opacity-50 transition-colors"
           />
-          <span className="absolute bottom-2 right-3 text-[10px] text-muted-foreground">
+          <span className="absolute bottom-2 right-3 text-[10px] text-muted-foreground/40">
             {value.length > 0 ? value.length : ""}
           </span>
         </div>
@@ -69,7 +69,7 @@ export function ChatInput({
           <Button
             variant="destructive"
             size="icon"
-            className="h-10 w-10 rounded-xl shrink-0"
+            className="h-10 w-10 rounded-xl shrink-0 bg-destructive/80 backdrop-blur-sm border border-destructive/20 hover:bg-destructive/90"
             onClick={onCancel}
           >
             <Square className="h-4 w-4" />
@@ -77,7 +77,7 @@ export function ChatInput({
         ) : (
           <Button
             size="icon"
-            className="h-10 w-10 rounded-xl shrink-0"
+            className="h-10 w-10 rounded-xl shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={handleSend}
             disabled={!value.trim() || disabled}
           >

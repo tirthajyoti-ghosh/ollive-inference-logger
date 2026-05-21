@@ -57,14 +57,14 @@ export default function ConversationPage({
   if (loading) {
     return (
       <div className="flex flex-col h-screen">
-        <div className="border-b border-border px-6 py-4">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="h-3 w-32 mt-2" />
+        <div className="glass border-b border-white/[0.04] px-6 py-4">
+          <Skeleton className="h-5 w-48 bg-white/[0.05]" />
+          <Skeleton className="h-3 w-32 mt-2 bg-white/[0.05]" />
         </div>
         <div className="flex-1 p-6 space-y-4">
-          <Skeleton className="h-16 w-3/5" />
-          <Skeleton className="h-16 w-2/5 ml-auto" />
-          <Skeleton className="h-16 w-3/5" />
+          <Skeleton className="h-16 w-3/5 bg-white/[0.03]" />
+          <Skeleton className="h-16 w-2/5 ml-auto bg-white/[0.03]" />
+          <Skeleton className="h-16 w-3/5 bg-white/[0.03]" />
         </div>
       </div>
     );
@@ -73,14 +73,16 @@ export default function ConversationPage({
   if (loadError) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4 p-6">
-        <AlertCircle className="h-10 w-10 text-destructive" />
-        <p className="text-sm text-muted-foreground">{loadError}</p>
-        <Link
-          href="/chat"
-          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
-        >
-          Back to Chat
-        </Link>
+        <div className="glass-card rounded-2xl p-8 text-center space-y-4 max-w-md">
+          <AlertCircle className="h-10 w-10 text-destructive mx-auto" />
+          <p className="text-sm text-muted-foreground">{loadError}</p>
+          <Link
+            href="/chat"
+            className="inline-flex items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2 text-sm font-medium hover:bg-white/[0.06] transition-colors"
+          >
+            Back to Chat
+          </Link>
+        </div>
       </div>
     );
   }
@@ -88,10 +90,10 @@ export default function ConversationPage({
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <header className="border-b border-border px-4 md:px-6 py-3 flex items-center gap-3 shrink-0 bg-background/80 backdrop-blur-sm">
+      <header className="glass border-b border-white/[0.04] px-4 md:px-6 py-3 flex items-center gap-3 shrink-0">
         <Link
           href="/conversations"
-          className="inline-flex items-center justify-center rounded-lg h-8 w-8 shrink-0 hover:bg-muted transition-colors"
+          className="inline-flex items-center justify-center rounded-xl h-8 w-8 shrink-0 hover:bg-white/[0.06] transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
@@ -100,7 +102,7 @@ export default function ConversationPage({
             {conversation?.title || "Untitled Conversation"}
           </h1>
           <div className="flex items-center gap-2 mt-0.5">
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge variant="secondary" className="text-[10px] bg-white/[0.04] border border-white/[0.06]">
               {provider}/{model}
             </Badge>
             {conversation && (
@@ -117,10 +119,10 @@ export default function ConversationPage({
 
       {/* Messages */}
       <ScrollArea className="flex-1" ref={scrollRef}>
-        <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4 pb-4">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-6 pb-6">
           {messages.length === 0 && !isStreaming && (
             <div className="text-center py-20">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground/60 text-sm">
                 No messages yet. Start the conversation below.
               </p>
             </div>
@@ -139,7 +141,7 @@ export default function ConversationPage({
             )}
 
           {error && (
-            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+            <div className="glass-card rounded-xl flex items-center gap-2 text-xs text-destructive px-4 py-3">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               {error}
             </div>

@@ -26,7 +26,7 @@ class InferenceLogConsumer:
         self._settings = settings
         self._stream = settings.stream_name
         self._group = settings.consumer_group
-        self._running = False
+        self._running = True
 
     async def create_consumer_group(self) -> None:
         """Create the consumer group idempotently."""
@@ -51,13 +51,6 @@ class InferenceLogConsumer:
     async def run(self, consumer_name: str) -> None:
         """Main consumer loop: read, process, ACK, handle dead letters."""
         await self.create_consumer_group()
-        self._running = True
-
-        # Set up graceful shutdown
-        loop = asyncio.get_running_loop()
-        for sig in (signal.SIGTERM, signal.SIGINT):
-            loop.add_signal_handler(sig, self._shutdown)
-
         logger.info("Consumer '%s' starting on stream '%s'", consumer_name, self._stream)
 
         while self._running:

@@ -12,7 +12,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeseriesPoint } from "@/lib/api";
 
@@ -22,11 +21,17 @@ function formatTick(timestamp: unknown) {
 }
 
 const tooltipStyle = {
-  backgroundColor: "oklch(0.17 0.015 260)",
-  border: "1px solid oklch(0.28 0.015 260)",
-  borderRadius: "8px",
+  backgroundColor: "rgba(12,12,17,0.9)",
+  backdropFilter: "blur(12px)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: "12px",
   fontSize: "12px",
+  boxShadow: "0 8px 32px -8px rgba(0,0,0,0.6)",
 };
+
+const axisTick = { fontSize: 10, fill: "#71717a" };
+
+const activeDot = { r: 4, fill: "#f59e0b", stroke: "#07070a", strokeWidth: 2 };
 
 interface RPMChartProps {
   data: TimeseriesPoint[];
@@ -36,43 +41,46 @@ interface RPMChartProps {
 export function RPMChart({ data, loading }: RPMChartProps) {
   if (loading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-40 mb-4" />
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </Card>
+      <div className="glass-card rounded-2xl p-6">
+        <Skeleton className="h-4 w-40 mb-5 bg-white/5" />
+        <Skeleton className="h-64 w-full rounded-lg bg-white/5" />
+      </div>
     );
   }
 
   return (
-    <Card className="p-5">
-      <h3 className="text-sm font-medium mb-4">Requests per Minute</h3>
+    <div className="glass-card rounded-2xl p-6">
+      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Requests per Minute</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.015 260)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTick}
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={axisTick}
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={axisTick}
+              tickLine={false}
+              axisLine={false}
             />
             <Tooltip contentStyle={tooltipStyle} labelFormatter={formatTick} />
             <Line
               type="monotone"
               dataKey="value"
-              stroke="oklch(0.72 0.15 230)"
+              stroke="#f59e0b"
               strokeWidth={2}
               dot={false}
+              activeDot={activeDot}
               name="RPM"
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -84,39 +92,41 @@ interface TokenChartProps {
 export function TokenConsumptionChart({ data, loading }: TokenChartProps) {
   if (loading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-40 mb-4" />
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </Card>
+      <div className="glass-card rounded-2xl p-6">
+        <Skeleton className="h-4 w-40 mb-5 bg-white/5" />
+        <Skeleton className="h-64 w-full rounded-lg bg-white/5" />
+      </div>
     );
   }
 
   return (
-    <Card className="p-5">
-      <h3 className="text-sm font-medium mb-4">Token Consumption</h3>
+    <div className="glass-card rounded-2xl p-6">
+      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Token Consumption</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="promptGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.72 0.15 230)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="oklch(0.72 0.15 230)" stopOpacity={0} />
+                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="completionGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.70 0.17 160)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="oklch(0.70 0.17 160)" stopOpacity={0} />
+                <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.015 260)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTick}
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={axisTick}
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={axisTick}
+              tickLine={false}
+              axisLine={false}
             />
             <Tooltip contentStyle={tooltipStyle} labelFormatter={formatTick} />
             <Legend wrapperStyle={{ fontSize: "11px" }} />
@@ -124,7 +134,7 @@ export function TokenConsumptionChart({ data, loading }: TokenChartProps) {
               type="monotone"
               dataKey="prompt_tokens"
               stackId="1"
-              stroke="oklch(0.72 0.15 230)"
+              stroke="#f59e0b"
               fill="url(#promptGrad)"
               name="Prompt"
             />
@@ -132,14 +142,14 @@ export function TokenConsumptionChart({ data, loading }: TokenChartProps) {
               type="monotone"
               dataKey="completion_tokens"
               stackId="1"
-              stroke="oklch(0.70 0.17 160)"
+              stroke="#38bdf8"
               fill="url(#completionGrad)"
               name="Completion"
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -151,35 +161,37 @@ interface CostChartProps {
 export function CostChart({ data, loading }: CostChartProps) {
   if (loading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-40 mb-4" />
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </Card>
+      <div className="glass-card rounded-2xl p-6">
+        <Skeleton className="h-4 w-40 mb-5 bg-white/5" />
+        <Skeleton className="h-64 w-full rounded-lg bg-white/5" />
+      </div>
     );
   }
 
   return (
-    <Card className="p-5">
-      <h3 className="text-sm font-medium mb-4">Cost Over Time</h3>
+    <div className="glass-card rounded-2xl p-6">
+      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Cost Over Time</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.70 0.15 290)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="oklch(0.70 0.15 290)" stopOpacity={0} />
+                <stop offset="0%" stopColor="#34d399" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#34d399" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.015 260)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTick}
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={axisTick}
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "oklch(0.65 0.01 260)" }}
-              stroke="oklch(0.28 0.015 260)"
+              tick={axisTick}
+              tickLine={false}
+              axisLine={false}
               tickFormatter={(v: number) => `$${v.toFixed(2)}`}
             />
             <Tooltip
@@ -190,7 +202,7 @@ export function CostChart({ data, loading }: CostChartProps) {
             <Area
               type="monotone"
               dataKey="value"
-              stroke="oklch(0.70 0.15 290)"
+              stroke="#34d399"
               strokeWidth={2}
               fill="url(#costGrad)"
               name="Cost (USD)"
@@ -198,6 +210,6 @@ export function CostChart({ data, loading }: CostChartProps) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }
