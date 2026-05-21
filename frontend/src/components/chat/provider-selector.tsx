@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 
 interface ProviderSelectorProps {
   provider: string;
@@ -69,8 +68,8 @@ export function ProviderSelector({
   if (loading) {
     return (
       <div className="flex gap-2">
-        <div className="h-9 w-32 rounded-md bg-white/[0.05] animate-pulse" />
-        <div className="h-9 w-48 rounded-md bg-white/[0.05] animate-pulse" />
+        <div className="h-9 w-32 rounded-[9px] animate-pulse" style={{ background: "var(--bg-2)" }} />
+        <div className="h-9 w-48 rounded-[9px] animate-pulse" style={{ background: "var(--bg-2)" }} />
       </div>
     );
   }
@@ -78,7 +77,7 @@ export function ProviderSelector({
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Select value={provider} onValueChange={handleProviderChange}>
-        <SelectTrigger className="w-36 h-9 text-xs border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+        <SelectTrigger className="input-custom w-36 h-9 text-xs">
           <SelectValue placeholder="Provider" />
         </SelectTrigger>
         <SelectContent>
@@ -91,7 +90,7 @@ export function ProviderSelector({
       </Select>
 
       <Select value={model} onValueChange={(v) => { if (v) onModelChange(v); }}>
-        <SelectTrigger className="w-52 h-9 text-xs border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+        <SelectTrigger className="input-custom w-52 h-9 text-xs">
           <SelectValue placeholder="Model" />
         </SelectTrigger>
         <SelectContent>
@@ -104,9 +103,9 @@ export function ProviderSelector({
       </Select>
 
       {provider && model && (
-        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-primary/[0.08] text-primary border border-primary/[0.12]">
+        <span className="badge badge-olive text-[10.5px]">
           {provider}/{model}
-        </Badge>
+        </span>
       )}
     </div>
   );

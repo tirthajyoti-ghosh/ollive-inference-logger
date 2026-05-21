@@ -2,18 +2,33 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createConversation, getConversations, type Conversation } from "@/lib/api";
-import { ProviderSelector } from "@/components/chat/provider-selector";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { createConversation, getConversations, getProviders, type Conversation } from "@/lib/api";
 import {
   MessageSquare,
   Plus,
   ArrowRight,
-  Zap,
+  Check,
 } from "lucide-react";
-import { relativeTime, statusColor, formatTokens, formatCurrency } from "@/lib/utils";
+import { relativeTime, formatTokens, formatCurrency } from "@/lib/utils";
+
+/* ── Provider icon placeholder ────────────────────────────────────────── */
+function ProviderIcon({ name }: { name: string }) {
+  const letter = name.charAt(0).toUpperCase();
+  const bg =
+    name === "openai"
+      ? "oklch(0.55 0.1 160)"
+      : name === "anthropic"
+      ? "oklch(0.55 0.12 40)"
+      : "oklch(0.6 0.14 25)";
+  return (
+    <span
+      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-semibold text-white"
+      style={{ background: bg }}
+    >
+      {letter}
+    </span>
+  );
+}
 
 export default function ChatPage() {
   const router = useRouter();
@@ -22,12 +37,56 @@ export default function ChatPage() {
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
   const [recents, setRecents] = useState<Conversation[]>([]);
+  const [providers, setProviders] = useState<Record<string, string[]>>({});
+  const [selectedProvider, setSelectedProvider] = useState<string>("");
+  const [selectedModel, setSelectedModel] = useState<string>("");
 
   useEffect(() => {
     getConversations("active", 0, 5)
       .then((data) => setRecents(data.items))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    getProviders()
+      .then((data) => {
+        setProviders(data.providers);
+        const keys = Object.keys(data.providers);
+        if (keys.length > 0) {
+          setSelectedProvider(keys[0]);
+          setProvider(keys[0]);
+          const models = data.providers[keys[0]];
+          if (models?.length) {
+            setSelectedModel(models[0]);
+            setModel(models[0]);
+          }
+        }
+      })
+      .catch(() => {
+        setProviders({
+          openai: ["gpt-4o", "gpt-4o-mini"],
+          anthropic: ["claude-sonnet-4-20250514"],
+        });
+      });
+  }, []);
+
+  const providerKeys = Object.keys(providers);
+  const models = providers[selectedProvider] || [];
+
+  const handleSelectProvider = (p: string) => {
+    setSelectedProvider(p);
+    setProvider(p);
+    const m = providers[p];
+    if (m?.length) {
+      setSelectedModel(m[0]);
+      setModel(m[0]);
+    }
+  };
+
+  const handleSelectModel = (m: string) => {
+    setSelectedModel(m);
+    setModel(m);
+  };
 
   const handleNewConversation = useCallback(async () => {
     if (!provider || !model) return;
@@ -45,119 +104,243 @@ export default function ChatPage() {
   }, [provider, model, title, router]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 md:p-10">
-      <div className="w-full max-w-2xl space-y-8">
-        {/* Hero */}
-        <div className="text-center space-y-4 animate-fade-up">
-          <div className="flex items-center justify-center">
-            <div className="relative flex items-center justify-center h-20 w-20 rounded-3xl bg-primary/[0.08] glow-amber">
-              <div className="absolute inset-0 rounded-3xl bg-primary/[0.04] blur-xl" />
-              <Zap className="relative h-9 w-9 text-primary" />
+    <div className="page-enter max-w-[1280px] mx-auto px-8 py-8">
+      {/* Page header */}
+      <div className="mb-8">
+        <h1 className="text-[22px] font-semibold" style={{ color: "var(--ink)" }}>
+          New conversation
+        </h1>
+        <p className="mt-1 text-[13.5px]" style={{ color: "var(--muted-foreground)" }}>
+          Select a provider and model, then start chatting. Every request is logged.
+        </p>
+      </div>
+
+      {/* 2-column grid */}
+      <div className="grid grid-cols-12 gap-8">
+        {/* ── Left column ─────────────────────────────────────────────── */}
+        <div className="col-span-12 lg:col-span-8">
+          <div className="card-lg p-7 space-y-6">
+            {/* Provider selector cards */}
+            <div>
+              <label
+                className="block text-[11.5px] font-medium uppercase tracking-wider mb-3"
+                style={{ color: "var(--muted-foreground)" }}
+              >
+                Provider
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {providerKeys.map((p) => {
+                  const isActive = selectedProvider === p;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => handleSelectProvider(p)}
+                      className="relative flex items-center gap-3 p-3.5 rounded-[12px] text-left transition-all cursor-pointer"
+                      style={{
+                        background: isActive ? "var(--olive-soft)" : "var(--surface)",
+                        border: `1.5px solid ${isActive ? "var(--olive)" : "var(--border)"}`,
+                        boxShadow: isActive
+                          ? "0 0 0 3px oklch(0.78 0.06 130 / 0.2)"
+                          : "var(--shadow-sm)",
+                      }}
+                    >
+                      <ProviderIcon name={p} />
+                      <div>
+                        <div className="text-[13.5px] font-medium" style={{ color: "var(--ink)" }}>
+                          {p.charAt(0).toUpperCase() + p.slice(1)}
+                        </div>
+                        <div className="text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
+                          {providers[p]?.length || 0} model{(providers[p]?.length || 0) !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+                      {isActive && (
+                        <span
+                          className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center"
+                          style={{ background: "var(--olive)", color: "#fff" }}
+                        >
+                          <Check size={12} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Model selector */}
+            {models.length > 0 && (
+              <div>
+                <label
+                  className="block text-[11.5px] font-medium uppercase tracking-wider mb-3"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  Model
+                </label>
+                <div className="rounded-[10px] p-1" style={{ background: "var(--surface-2)" }}>
+                  {models.map((m) => {
+                    const isActive = selectedModel === m;
+                    return (
+                      <button
+                        key={m}
+                        onClick={() => handleSelectModel(m)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-left transition-all cursor-pointer"
+                        style={{
+                          background: isActive ? "var(--olive-soft)" : "transparent",
+                        }}
+                      >
+                        {/* Radio dot */}
+                        <span
+                          className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
+                          style={{
+                            borderColor: isActive ? "var(--olive)" : "var(--border-strong)",
+                          }}
+                        >
+                          {isActive && (
+                            <span
+                              className="w-2 h-2 rounded-full"
+                              style={{ background: "var(--olive)" }}
+                            />
+                          )}
+                        </span>
+                        <span
+                          className="font-mono text-[13px] flex-1"
+                          style={{ color: "var(--ink)" }}
+                        >
+                          {m}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Title input */}
+            <div>
+              <label
+                className="block text-[11.5px] font-medium uppercase tracking-wider mb-2"
+                style={{ color: "var(--muted-foreground)" }}
+              >
+                Title (optional)
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Give this conversation a name..."
+                className="input-custom"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-2" style={{ borderTop: "1px solid var(--border)" }}>
+              <span className="text-[12px]" style={{ color: "var(--faint)" }}>
+                Logged automatically — every request, token, and ms.
+              </span>
+              <button
+                onClick={handleNewConversation}
+                disabled={!provider || !model || creating}
+                className="btn btn-primary"
+                style={{
+                  opacity: !provider || !model || creating ? 0.5 : 1,
+                  cursor: !provider || !model || creating ? "not-allowed" : "pointer",
+                }}
+              >
+                {creating ? (
+                  <>
+                    <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={15} />
+                    Start conversation
+                  </>
+                )}
+              </button>
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">New Conversation</h1>
-          <p className="text-muted-foreground/80 text-sm max-w-md mx-auto leading-relaxed">
-            Select a provider and model to start a new inference conversation.
-            All messages are logged and tracked.
-          </p>
         </div>
 
-        {/* New conversation form */}
-        <div className="glass-card gradient-border rounded-2xl p-6 space-y-5 animate-fade-up stagger-2">
-          <div className="space-y-2">
-            <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Provider &amp; Model
-            </label>
-            <ProviderSelector
-              provider={provider}
-              model={model}
-              onProviderChange={setProvider}
-              onModelChange={setModel}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Title (optional)
-            </label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Give this conversation a name..."
-              className="h-10 bg-white/[0.03] border-white/[0.06] focus:border-primary/30 focus:ring-primary/20 transition-colors"
-            />
-          </div>
-
-          <Button
-            onClick={handleNewConversation}
-            disabled={!provider || !model || creating}
-            className="w-full h-11 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all"
-          >
-            {creating ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                Creating...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Start Conversation
-              </span>
-            )}
-          </Button>
-        </div>
-
-        {/* Recent conversations */}
-        {recents.length > 0 && (
-          <div className="space-y-3 animate-fade-up stagger-3">
-            <h2 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Recent Conversations
-            </h2>
-            <div className="space-y-2">
+        {/* ── Right column ────────────────────────────────────────────── */}
+        <div className="col-span-12 lg:col-span-4 space-y-6">
+          {/* Recent conversations */}
+          <div className="card-lg">
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+              <h2 className="text-[14px] font-semibold" style={{ color: "var(--ink)" }}>
+                Recent
+              </h2>
+              <button
+                onClick={() => router.push("/conversations")}
+                className="text-[12.5px] font-medium"
+                style={{ color: "var(--olive-fg)" }}
+              >
+                View all
+              </button>
+            </div>
+            <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+              {recents.length === 0 && (
+                <div className="px-5 py-8 text-center">
+                  <p className="text-[13px]" style={{ color: "var(--muted-foreground)" }}>
+                    No recent conversations
+                  </p>
+                </div>
+              )}
               {recents.map((conv) => (
-                <div
+                <button
                   key={conv.id}
-                  className="glass-card rounded-2xl p-4 cursor-pointer group"
+                  className="w-full text-left px-5 py-3 transition-colors cursor-pointer"
+                  style={{ background: "transparent" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-2)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   onClick={() => router.push(`/chat/${conv.id}`)}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                  <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
+                      <p className="text-[13px] font-medium truncate" style={{ color: "var(--ink)" }}>
                         {conv.title || `${conv.provider}/${conv.model}`}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] ${statusColor(conv.status)}`}
-                        >
-                          {conv.status}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {conv.message_count} messages
+                      <div className="flex items-center gap-2 mt-1">
+                        <span
+                          className="inline-block w-1.5 h-1.5 rounded-full"
+                          style={{
+                            background:
+                              conv.status === "active"
+                                ? "var(--ok)"
+                                : conv.status === "paused"
+                                ? "var(--warn)"
+                                : "var(--faint)",
+                          }}
+                        />
+                        <span className="font-mono text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
+                          {conv.model}
                         </span>
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {formatTokens(conv.total_tokens)} tokens
+                        <span className="font-mono text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
+                          {conv.message_count}msg
                         </span>
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {formatCurrency(conv.total_cost_usd)}
+                        <span className="font-mono text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
+                          {formatTokens(conv.total_tokens)}tok
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground/60">
-                        {relativeTime(conv.updated_at)}
-                      </span>
-                      <ArrowRight className="h-4 w-4 text-primary/60 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
+                    <span className="text-[11px] shrink-0 mt-0.5" style={{ color: "var(--faint)" }}>
+                      {relativeTime(conv.updated_at)}
+                    </span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
-        )}
+
+          {/* Hint card */}
+          <div className="card p-5">
+            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ink-2)" }}>
+              <strong style={{ color: "var(--ink)" }}>Tip:</strong>{" "}
+              All conversations are logged with full token counts, latency, and cost
+              tracking. Visit the dashboard for real-time analytics.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

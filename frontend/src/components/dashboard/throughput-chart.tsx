@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
   XAxis,
@@ -10,28 +8,54 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeseriesPoint } from "@/lib/api";
+
+const AXIS_TICK = {
+  fontSize: 11,
+  fontFamily: '"JetBrains Mono", monospace',
+  fill: "oklch(0.55 0.012 80)",
+};
+const GRID = { stroke: "oklch(0.93 0.008 80)", strokeDasharray: "3 4" };
+const AXIS_LINE = { stroke: "oklch(0.9 0.008 80)" };
+
+const OLIVE = "oklch(0.55 0.09 130)";
+const INFO = "oklch(0.62 0.1 235)";
+const GOLD = "oklch(0.72 0.12 75)";
 
 function formatTick(timestamp: unknown) {
   const d = new Date(String(timestamp));
   return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
-const tooltipStyle = {
-  backgroundColor: "rgba(12,12,17,0.9)",
-  backdropFilter: "blur(12px)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  borderRadius: "12px",
-  fontSize: "12px",
-  boxShadow: "0 8px 32px -8px rgba(0,0,0,0.6)",
-};
+function ChartTooltip({ active, payload, label, formatter }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="card-lg" style={{ padding: "10px 14px", fontSize: 12 }}>
+      <p className="font-mono" style={{ color: "var(--muted-foreground)", marginBottom: 6 }}>
+        {formatTick(label)}
+      </p>
+      {payload.map((entry: any) => {
+        const val = formatter
+          ? formatter(entry.value, entry.name)
+          : entry.value;
+        return (
+          <div key={entry.dataKey} className="flex items-center gap-2" style={{ marginBottom: 2 }}>
+            <span
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ background: entry.color }}
+            />
+            <span style={{ color: "var(--ink)" }} className="font-mono">
+              {entry.name}: {val}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-const axisTick = { fontSize: 10, fill: "#71717a" };
-
-const activeDot = { r: 4, fill: "#f59e0b", stroke: "#07070a", strokeWidth: 2 };
+/* ── RPM Chart ──────────────────────────────────────────────────────── */
 
 interface RPMChartProps {
   data: TimeseriesPoint[];
@@ -41,48 +65,56 @@ interface RPMChartProps {
 export function RPMChart({ data, loading }: RPMChartProps) {
   if (loading) {
     return (
-      <div className="glass-card rounded-2xl p-6">
-        <Skeleton className="h-4 w-40 mb-5 bg-white/5" />
-        <Skeleton className="h-64 w-full rounded-lg bg-white/5" />
+      <div className="card-lg p-6">
+        <div className="h-4 w-40 rounded bg-[var(--bg-2)] animate-pulse mb-5" />
+        <div className="h-64 w-full rounded-xl bg-[var(--bg-2)] animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6">
-      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Requests per Minute</h3>
+    <div className="card-lg p-6">
+      <h3 className="font-semibold mb-5" style={{ fontSize: 13.5, color: "var(--ink)" }}>
+        Requests per Minute
+      </h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+          <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="rpmGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={OLIVE} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={OLIVE} stopOpacity={0.04} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid {...GRID} vertical={false} />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTick}
-              tick={axisTick}
+              tick={AXIS_TICK}
+              stroke={AXIS_LINE.stroke}
               tickLine={false}
-              axisLine={false}
+              axisLine={AXIS_LINE}
             />
-            <YAxis
-              tick={axisTick}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Tooltip contentStyle={tooltipStyle} labelFormatter={formatTick} />
-            <Line
+            <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} />
+            <Tooltip content={<ChartTooltip />} />
+            <Area
               type="monotone"
               dataKey="value"
-              stroke="#f59e0b"
-              strokeWidth={2}
+              stroke={OLIVE}
+              strokeWidth={1.5}
+              fill="url(#rpmGrad)"
               dot={false}
-              activeDot={activeDot}
+              activeDot={{ r: 3, fill: OLIVE, stroke: "#fff", strokeWidth: 2 }}
               name="RPM"
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>
   );
 }
+
+/* ── Token Consumption (stacked area) ───────────────────────────────── */
 
 interface TokenChartProps {
   data: TimeseriesPoint[];
@@ -92,59 +124,74 @@ interface TokenChartProps {
 export function TokenConsumptionChart({ data, loading }: TokenChartProps) {
   if (loading) {
     return (
-      <div className="glass-card rounded-2xl p-6">
-        <Skeleton className="h-4 w-40 mb-5 bg-white/5" />
-        <Skeleton className="h-64 w-full rounded-lg bg-white/5" />
+      <div className="card-lg p-6">
+        <div className="h-4 w-40 rounded bg-[var(--bg-2)] animate-pulse mb-5" />
+        <div className="h-64 w-full rounded-xl bg-[var(--bg-2)] animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6">
-      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Token Consumption</h3>
+    <div className="card-lg p-6">
+      {/* Header with legend */}
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-semibold" style={{ fontSize: 13.5, color: "var(--ink)" }}>
+          Token Consumption
+        </h3>
+        <div className="flex items-center gap-4">
+          {[
+            { label: "Input", color: INFO },
+            { label: "Output", color: OLIVE },
+          ].map((l) => (
+            <div key={l.label} className="flex items-center gap-1.5">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
+              <span style={{ fontSize: 11, color: "var(--ink-2)", fontWeight: 500 }}>{l.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
             <defs>
-              <linearGradient id="promptGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+              <linearGradient id="promptGrad2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={INFO} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={INFO} stopOpacity={0.04} />
               </linearGradient>
-              <linearGradient id="completionGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
+              <linearGradient id="completionGrad2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={OLIVE} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={OLIVE} stopOpacity={0.04} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+            <CartesianGrid {...GRID} vertical={false} />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTick}
-              tick={axisTick}
+              tick={AXIS_TICK}
+              stroke={AXIS_LINE.stroke}
               tickLine={false}
-              axisLine={false}
+              axisLine={AXIS_LINE}
             />
-            <YAxis
-              tick={axisTick}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Tooltip contentStyle={tooltipStyle} labelFormatter={formatTick} />
-            <Legend wrapperStyle={{ fontSize: "11px" }} />
+            <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} />
+            <Tooltip content={<ChartTooltip />} />
             <Area
               type="monotone"
               dataKey="prompt_tokens"
-              stackId="1"
-              stroke="#f59e0b"
-              fill="url(#promptGrad)"
-              name="Prompt"
+              stackId="tokens"
+              stroke={INFO}
+              strokeWidth={1.5}
+              fill="url(#promptGrad2)"
+              name="Input"
             />
             <Area
               type="monotone"
               dataKey="completion_tokens"
-              stackId="1"
-              stroke="#38bdf8"
-              fill="url(#completionGrad)"
-              name="Completion"
+              stackId="tokens"
+              stroke={OLIVE}
+              strokeWidth={1.5}
+              fill="url(#completionGrad2)"
+              name="Output"
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -152,6 +199,8 @@ export function TokenConsumptionChart({ data, loading }: TokenChartProps) {
     </div>
   );
 }
+
+/* ── Cost Chart ─────────────────────────────────────────────────────── */
 
 interface CostChartProps {
   data: TimeseriesPoint[];
@@ -161,51 +210,58 @@ interface CostChartProps {
 export function CostChart({ data, loading }: CostChartProps) {
   if (loading) {
     return (
-      <div className="glass-card rounded-2xl p-6">
-        <Skeleton className="h-4 w-40 mb-5 bg-white/5" />
-        <Skeleton className="h-64 w-full rounded-lg bg-white/5" />
+      <div className="card-lg p-6">
+        <div className="h-4 w-40 rounded bg-[var(--bg-2)] animate-pulse mb-5" />
+        <div className="h-64 w-full rounded-xl bg-[var(--bg-2)] animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6">
-      <h3 className="text-[13px] font-semibold mb-5 text-foreground/80">Cost Over Time</h3>
+    <div className="card-lg p-6">
+      <h3 className="font-semibold mb-5" style={{ fontSize: 13.5, color: "var(--ink)" }}>
+        Cost Over Time
+      </h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
             <defs>
-              <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#34d399" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#34d399" stopOpacity={0} />
+              <linearGradient id="costGrad2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={GOLD} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={GOLD} stopOpacity={0.04} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+            <CartesianGrid {...GRID} vertical={false} />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTick}
-              tick={axisTick}
+              tick={AXIS_TICK}
+              stroke={AXIS_LINE.stroke}
               tickLine={false}
-              axisLine={false}
+              axisLine={AXIS_LINE}
             />
             <YAxis
-              tick={axisTick}
+              tick={AXIS_TICK}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) => `$${v.toFixed(2)}`}
             />
             <Tooltip
-              contentStyle={tooltipStyle}
-              labelFormatter={formatTick}
-              formatter={(value) => [`$${Number(value).toFixed(4)}`, "Cost"]}
+              content={
+                <ChartTooltip
+                  formatter={(val: number) => `$${Number(val).toFixed(4)}`}
+                />
+              }
             />
             <Area
               type="monotone"
               dataKey="value"
-              stroke="#34d399"
-              strokeWidth={2}
-              fill="url(#costGrad)"
+              stroke={GOLD}
+              strokeWidth={1.5}
+              fill="url(#costGrad2)"
               name="Cost (USD)"
+              dot={false}
+              activeDot={{ r: 3, fill: GOLD, stroke: "#fff", strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>

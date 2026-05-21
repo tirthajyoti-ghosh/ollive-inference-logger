@@ -1,82 +1,160 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useErrors } from "@/hooks/use-dashboard";
+import { KpiCard } from "@/components/dashboard/kpi-card";
 import {
   ErrorRateChart,
   ErrorBreakdownChart,
 } from "@/components/dashboard/error-chart";
-import { TimeRangeSelector } from "@/components/dashboard/time-range-selector";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle, XCircle, ShieldAlert, Clock } from "lucide-react";
 import { formatTimestamp } from "@/lib/utils";
 
+function codeBadgeClass(status: string): string {
+  const code = parseInt(status, 10);
+  if (code === 429) return "badge badge-warn";
+  if (code >= 500) return "badge badge-err";
+  if (code >= 400) return "badge badge-warn";
+  return "badge badge-neutral";
+}
+
 export default function ErrorsPage() {
-  const [hours, setHours] = useState(24);
+  const searchParams = useSearchParams();
+  const hours = Number(searchParams.get("hours") ?? 24);
   const { data, loading } = useErrors({ hours, refreshInterval: 30_000 });
+
+  /* Derive KPI values */
+  const errorRate = data?.error_rate ?? 0;
+  const failedTotal = (data?.breakdown ?? []).reduce((s, b) => s + b.count, 0);
+  const topError = (data?.breakdown ?? []).sort((a, b) => b.count - a.count)[0];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <TimeRangeSelector hours={hours} onChange={setHours} />
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          label="Error Rate"
+          value={data ? `${(errorRate * 100).toFixed(2)}%` : "-"}
+          icon={AlertTriangle}
+          iconBg="var(--err-soft)"
+          iconColor="oklch(0.4 0.1 25)"
+          delta="0.4%"
+          deltaPositive={false}
+          loading={loading}
+        />
+        <KpiCard
+          label="Failed Requests"
+          value={data ? failedTotal.toLocaleString() : "-"}
+          icon={XCircle}
+          iconBg="var(--err-soft)"
+          iconColor="oklch(0.4 0.1 25)"
+          loading={loading}
+        />
+        <KpiCard
+          label="Top Error"
+          value={topError ? topError.type : "-"}
+          icon={ShieldAlert}
+          iconBg="var(--warn-soft)"
+          iconColor="oklch(0.38 0.08 60)"
+          loading={loading}
+        />
+        <KpiCard
+          label="MTTR"
+          value="-"
+          unit="min"
+          icon={Clock}
+          iconBg="var(--info-soft)"
+          iconColor="oklch(0.38 0.08 235)"
+          loading={loading}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ErrorRateChart
-          data={data?.error_timeseries ?? []}
-          loading={loading}
-        />
-        <ErrorBreakdownChart
-          data={data?.breakdown ?? []}
-          loading={loading}
-        />
+      {/* Charts row */}
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 lg:col-span-7">
+          <ErrorRateChart
+            data={data?.error_timeseries ?? []}
+            loading={loading}
+          />
+        </div>
+        <div className="col-span-12 lg:col-span-5">
+          <ErrorBreakdownChart
+            data={data?.breakdown ?? []}
+            loading={loading}
+          />
+        </div>
       </div>
 
       {/* Recent errors table */}
-      <Card className="p-5">
-        <h3 className="text-sm font-medium mb-4">Recent Errors</h3>
+      <div className="card-lg p-6">
+        <h3 className="font-semibold mb-4" style={{ fontSize: 13.5, color: "var(--ink)" }}>
+          Recent Errors
+        </h3>
+
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
+              <div key={i} className="h-12 w-full rounded bg-[var(--bg-2)] animate-pulse" />
             ))}
           </div>
         ) : !data?.recent_errors?.length ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
+          <p style={{ fontSize: 13.5, color: "var(--muted-foreground)", textAlign: "center", padding: "24px 0" }}>
             No errors in this time range
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full" style={{ fontSize: 13 }}>
               <thead>
-                <tr className="border-b border-border text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                  <th className="text-left py-2 pr-4">Type</th>
-                  <th className="text-left py-2 pr-4">Message</th>
-                  <th className="text-left py-2 pr-4">Model</th>
-                  <th className="text-right py-2">Timestamp</th>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  <th
+                    className="text-left font-medium py-2 pr-4"
+                    style={{ fontSize: 10.5, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em" }}
+                  >
+                    Code
+                  </th>
+                  <th
+                    className="text-left font-medium py-2 pr-4"
+                    style={{ fontSize: 10.5, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em" }}
+                  >
+                    Message
+                  </th>
+                  <th
+                    className="text-left font-medium py-2 pr-4"
+                    style={{ fontSize: 10.5, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em" }}
+                  >
+                    Model
+                  </th>
+                  <th
+                    className="text-right font-medium py-2"
+                    style={{ fontSize: 10.5, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em" }}
+                  >
+                    Timestamp
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {data.recent_errors.map((err) => (
-                  <tr key={err.id} className="border-b border-border/50">
+                  <tr key={err.id} style={{ borderBottom: "1px solid var(--bg-2)" }}>
                     <td className="py-2.5 pr-4">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-red-500/10 text-red-400 border-red-500/20"
-                      >
+                      <span className={codeBadgeClass(err.status)}>
                         {err.error_type || err.status}
-                      </Badge>
+                      </span>
                     </td>
-                    <td className="py-2.5 pr-4 max-w-xs truncate text-xs">
+                    <td
+                      className="py-2.5 pr-4 max-w-xs truncate"
+                      style={{ fontSize: 12.5, color: "var(--ink-2)" }}
+                    >
                       {err.error_message || "—"}
                     </td>
                     <td className="py-2.5 pr-4">
-                      <Badge variant="secondary" className="text-[10px]">
+                      <span className="badge badge-neutral font-mono">
                         {err.model}
-                      </Badge>
+                      </span>
                     </td>
-                    <td className="py-2.5 text-right text-muted-foreground text-xs whitespace-nowrap">
+                    <td
+                      className="py-2.5 text-right whitespace-nowrap font-mono"
+                      style={{ fontSize: 12, color: "var(--muted-foreground)" }}
+                    >
                       {formatTimestamp(err.created_at)}
                     </td>
                   </tr>
@@ -85,7 +163,7 @@ export default function ErrorsPage() {
             </table>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

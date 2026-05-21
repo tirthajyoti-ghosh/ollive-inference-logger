@@ -1,20 +1,35 @@
 "use client";
 
-import { Bot } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export function StreamingPlaceholder() {
   return (
     <div className="flex gap-3 mr-auto max-w-[85%]">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/[0.10] text-emerald-400 border border-emerald-500/[0.08]">
-        <Bot className="h-4 w-4" />
+      {/* Olive-soft sparkle avatar */}
+      <div
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+        style={{ background: "var(--olive-soft)", color: "var(--olive-fg)" }}
+      >
+        <Sparkles className="h-3.5 w-3.5" />
       </div>
-      <div className="glass-card rounded-2xl px-4 py-3 text-sm text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <span className="thinking-dot h-1.5 w-1.5 rounded-full bg-primary" />
-          <span className="thinking-dot h-1.5 w-1.5 rounded-full bg-primary" />
-          <span className="thinking-dot h-1.5 w-1.5 rounded-full bg-primary" />
-          <span className="ml-2 text-xs text-muted-foreground/60">Thinking...</span>
-        </div>
+
+      {/* Thinking pill */}
+      <div
+        className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm"
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+      >
+        <span className="text-[12.5px] font-medium" style={{ color: "var(--ink-2)" }}>
+          Thinking
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="dot" />
+          <span className="dot" />
+          <span className="dot" />
+        </span>
       </div>
     </div>
   );

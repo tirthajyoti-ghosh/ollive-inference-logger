@@ -7,14 +7,13 @@ import { useChat } from "@/hooks/use-chat";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { StreamingPlaceholder } from "@/components/chat/streaming-message";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft,
+  ChevronLeft,
   AlertCircle,
 } from "lucide-react";
-import { statusColor } from "@/lib/utils";
+import { statusColor, formatTokens, formatCurrency } from "@/lib/utils";
 
 export default function ConversationPage({
   params,
@@ -57,14 +56,14 @@ export default function ConversationPage({
   if (loading) {
     return (
       <div className="flex flex-col h-screen">
-        <div className="glass border-b border-white/[0.04] px-6 py-4">
-          <Skeleton className="h-5 w-48 bg-white/[0.05]" />
-          <Skeleton className="h-3 w-32 mt-2 bg-white/[0.05]" />
+        <div className="px-6 py-3" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
+          <Skeleton className="h-5 w-48" style={{ background: "var(--bg-2)" }} />
+          <Skeleton className="h-3 w-32 mt-2" style={{ background: "var(--bg-2)" }} />
         </div>
-        <div className="flex-1 p-6 space-y-4">
-          <Skeleton className="h-16 w-3/5 bg-white/[0.03]" />
-          <Skeleton className="h-16 w-2/5 ml-auto bg-white/[0.03]" />
-          <Skeleton className="h-16 w-3/5 bg-white/[0.03]" />
+        <div className="flex-1 p-6 space-y-4" style={{ background: "var(--background)" }}>
+          <Skeleton className="h-16 w-3/5" style={{ background: "var(--bg-2)" }} />
+          <Skeleton className="h-16 w-2/5 ml-auto" style={{ background: "var(--bg-2)" }} />
+          <Skeleton className="h-16 w-3/5" style={{ background: "var(--bg-2)" }} />
         </div>
       </div>
     );
@@ -72,13 +71,13 @@ export default function ConversationPage({
 
   if (loadError) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-4 p-6">
-        <div className="glass-card rounded-2xl p-8 text-center space-y-4 max-w-md">
-          <AlertCircle className="h-10 w-10 text-destructive mx-auto" />
-          <p className="text-sm text-muted-foreground">{loadError}</p>
+      <div className="flex flex-col items-center justify-center h-screen gap-4 p-6" style={{ background: "var(--background)" }}>
+        <div className="card-lg p-8 text-center space-y-4 max-w-md">
+          <AlertCircle className="h-10 w-10 mx-auto" style={{ color: "var(--err)" }} />
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>{loadError}</p>
           <Link
             href="/chat"
-            className="inline-flex items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2 text-sm font-medium hover:bg-white/[0.06] transition-colors"
+            className="btn btn-outline inline-flex"
           >
             Back to Chat
           </Link>
@@ -90,39 +89,59 @@ export default function ConversationPage({
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <header className="glass border-b border-white/[0.04] px-4 md:px-6 py-3 flex items-center gap-3 shrink-0">
+      <header
+        className="px-6 py-3 flex items-center gap-3 shrink-0"
+        style={{
+          background: "var(--surface)",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
         <Link
           href="/conversations"
-          className="inline-flex items-center justify-center rounded-xl h-8 w-8 shrink-0 hover:bg-white/[0.06] transition-colors"
+          className="btn-ghost btn-icon rounded-lg shrink-0 inline-flex items-center justify-center h-8 w-8"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ChevronLeft size={16} style={{ color: "var(--ink-2)" }} />
         </Link>
+
         <div className="flex-1 min-w-0">
-          <h1 className="text-sm font-semibold truncate">
+          <h1
+            className="text-[15px] font-medium truncate"
+            style={{ color: "var(--ink)" }}
+          >
             {conversation?.title || "Untitled Conversation"}
           </h1>
-          <div className="flex items-center gap-2 mt-0.5">
-            <Badge variant="secondary" className="text-[10px] bg-white/[0.04] border border-white/[0.06]">
-              {provider}/{model}
-            </Badge>
-            {conversation && (
-              <Badge
-                variant="outline"
-                className={`text-[10px] ${statusColor(conversation.status)}`}
-              >
-                {conversation.status}
-              </Badge>
-            )}
-          </div>
+        </div>
+
+        {/* Status badge */}
+        {conversation && (
+          <span className={`badge ${statusColor(conversation.status)}`}>
+            {conversation.status}
+          </span>
+        )}
+
+        {/* Meta */}
+        <div className="hidden sm:flex items-center gap-3 ml-2">
+          <span className="badge badge-olive text-[10.5px]">
+            {provider}/{model}
+          </span>
+          <span className="font-mono text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
+            {messages.length} msg
+          </span>
+          <span className="font-mono text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
+            {formatTokens(conversation?.total_tokens ?? 0)} tok
+          </span>
+          <span className="font-mono text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
+            {formatCurrency(conversation?.total_cost_usd ?? 0)}
+          </span>
         </div>
       </header>
 
       {/* Messages */}
-      <ScrollArea className="flex-1" ref={scrollRef}>
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-6 pb-6">
+      <ScrollArea className="flex-1" ref={scrollRef} style={{ background: "var(--background)" }}>
+        <div className="max-w-[820px] mx-auto px-6 py-8 flex flex-col gap-6">
           {messages.length === 0 && !isStreaming && (
             <div className="text-center py-20">
-              <p className="text-muted-foreground/60 text-sm">
+              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
                 No messages yet. Start the conversation below.
               </p>
             </div>
@@ -141,7 +160,10 @@ export default function ConversationPage({
             )}
 
           {error && (
-            <div className="glass-card rounded-xl flex items-center gap-2 text-xs text-destructive px-4 py-3">
+            <div
+              className="card flex items-center gap-2 text-xs px-4 py-3"
+              style={{ color: "var(--err)" }}
+            >
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               {error}
             </div>
@@ -155,6 +177,7 @@ export default function ConversationPage({
         onCancel={cancel}
         isStreaming={isStreaming}
         disabled={conversation?.status !== "active"}
+        providerLabel={provider && model ? `${provider}/${model}` : undefined}
       />
     </div>
   );

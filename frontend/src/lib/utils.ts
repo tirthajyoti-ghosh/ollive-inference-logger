@@ -59,14 +59,28 @@ export function relativeTime(iso: string): string {
 export function statusColor(status: string): string {
   switch (status) {
     case "active":
-      return "bg-emerald-500/15 text-emerald-400 border-emerald-500/20";
+      return "badge-ok";
     case "paused":
-      return "bg-amber-500/15 text-amber-400 border-amber-500/20";
+      return "badge-warn";
     case "cancelled":
-      return "bg-red-500/15 text-red-400 border-red-500/20";
+      return "badge-err";
     case "completed":
-      return "bg-blue-500/15 text-blue-400 border-blue-500/20";
+      return "badge-neutral";
     default:
-      return "bg-muted text-muted-foreground";
+      return "badge-neutral";
+  }
+}
+
+/** Map provider name to a CSS var-based background / text pair */
+export function providerColor(provider: string): { bg: string; text: string } {
+  switch (provider.toLowerCase()) {
+    case "openai":
+      return { bg: "oklch(0.94 0.04 160)", text: "oklch(0.35 0.08 160)" };
+    case "anthropic":
+      return { bg: "oklch(0.94 0.04 40)", text: "oklch(0.35 0.08 40)" };
+    case "groq":
+      return { bg: "oklch(0.94 0.05 25)", text: "oklch(0.35 0.1 25)" };
+    default:
+      return { bg: "var(--bg-2)", text: "var(--ink-2)" };
   }
 }

@@ -2,13 +2,13 @@
 
 import { useCallback, useRef, useState, type KeyboardEvent } from "react";
 import { Send, Square } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface ChatInputProps {
   onSend: (content: string) => void;
   onCancel?: () => void;
   isStreaming: boolean;
   disabled?: boolean;
+  providerLabel?: string;
 }
 
 export function ChatInput({
@@ -16,6 +16,7 @@ export function ChatInput({
   onCancel,
   isStreaming,
   disabled,
+  providerLabel,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -44,9 +45,23 @@ export function ChatInput({
   };
 
   return (
-    <div className="glass border-t border-white/[0.04] p-4">
-      <div className="flex items-end gap-2 max-w-3xl mx-auto">
-        <div className="relative flex-1">
+    <div
+      className="px-6 py-4"
+      style={{
+        background: "var(--surface)",
+        borderTop: "1px solid var(--border)",
+      }}
+    >
+      <div className="max-w-[820px] mx-auto">
+        <div
+          className="rounded-[14px] overflow-hidden"
+          style={{
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-sm)",
+            background: "var(--surface)",
+          }}
+        >
+          {/* Textarea */}
           <textarea
             ref={textareaRef}
             value={value}
@@ -55,35 +70,62 @@ export function ChatInput({
               handleInput();
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message... (Shift+Enter for newline)"
+            placeholder="Type a message..."
             disabled={disabled}
-            rows={1}
-            className="w-full resize-none rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/30 disabled:opacity-50 transition-colors"
+            rows={2}
+            className="w-full resize-none px-4 pt-3 pb-1 text-sm focus:outline-none disabled:opacity-50"
+            style={{
+              background: "transparent",
+              color: "var(--ink)",
+              border: "none",
+            }}
           />
-          <span className="absolute bottom-2 right-3 text-[10px] text-muted-foreground/40">
-            {value.length > 0 ? value.length : ""}
-          </span>
-        </div>
 
-        {isStreaming ? (
-          <Button
-            variant="destructive"
-            size="icon"
-            className="h-10 w-10 rounded-xl shrink-0 bg-destructive/80 backdrop-blur-sm border border-destructive/20 hover:bg-destructive/90"
-            onClick={onCancel}
-          >
-            <Square className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button
-            size="icon"
-            className="h-10 w-10 rounded-xl shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={handleSend}
-            disabled={!value.trim() || disabled}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        )}
+          {/* Bottom row */}
+          <div className="flex items-center justify-between px-4 pb-3 pt-1">
+            {/* Provider badge (left) */}
+            <div>
+              {providerLabel && (
+                <span className="badge badge-olive text-[10.5px]">
+                  {providerLabel}
+                </span>
+              )}
+            </div>
+
+            {/* Send hint + button (right) */}
+            <div className="flex items-center gap-3">
+              <span
+                className="text-[11px] font-mono hidden sm:inline"
+                style={{ color: "var(--faint)" }}
+              >
+                Enter to send
+              </span>
+
+              {isStreaming ? (
+                <button
+                  className="btn btn-danger btn-sm btn-icon"
+                  onClick={onCancel}
+                  title="Stop"
+                >
+                  <Square size={14} />
+                </button>
+              ) : (
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSend}
+                  disabled={!value.trim() || disabled}
+                  style={{
+                    opacity: !value.trim() || disabled ? 0.5 : 1,
+                    cursor: !value.trim() || disabled ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <Send size={14} />
+                  Send
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
