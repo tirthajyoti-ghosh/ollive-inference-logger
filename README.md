@@ -47,9 +47,6 @@ cp .env.example .env
 # One-command setup (Docker Compose)
 make up
 
-# Seed demo data for the dashboards
-make seed
-
 # Open the app
 open http://localhost:3000
 ```

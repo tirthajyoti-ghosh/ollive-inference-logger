@@ -1,4 +1,4 @@
-.PHONY: up down logs test seed reset migrate build
+.PHONY: up down logs test reset migrate build
 
 up:
 	docker compose up --build -d
@@ -18,13 +18,9 @@ test:
 	docker compose run --rm backend pytest -v
 	docker compose run --rm worker pytest -v
 
-seed:
-	docker compose exec backend python -m scripts.seed
-
 reset:
 	docker compose down -v
 	$(MAKE) up
-	$(MAKE) seed
 
 migrate:
 	docker compose run --rm migrate
