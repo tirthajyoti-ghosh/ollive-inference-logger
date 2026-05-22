@@ -64,6 +64,7 @@ async def chat_stream(
         request_ts = datetime.now(timezone.utc)
         first_token_ts = None
         cancelled = False
+        real_usage: dict | None = None
 
         try:
             async for kind, token in chat_service.llm_service.stream(
@@ -77,6 +78,14 @@ async def chat_stream(
 
                 if kind == "thinking":
                     yield f"data: {json.dumps({'thinking': token})}\n\n"
+                elif kind == "usage":
+                    parts = token.split(",")
+                    if len(parts) == 3:
+                        real_usage = {
+                            "prompt_tokens": int(parts[0]),
+                            "completion_tokens": int(parts[1]),
+                            "total_tokens": int(parts[2]),
+                        }
                 else:
                     if first_token_ts is None:
                         first_token_ts = datetime.now(timezone.utc)
@@ -90,16 +99,22 @@ async def chat_stream(
             )
             ttft_ms = int((first_token_ts - request_ts).total_seconds() * 1000) if first_token_ts else None
 
-            est_in_tokens = len(data.content) // 4
-            est_out_tokens = len(full_content) // 4
-            est_total = est_in_tokens + est_out_tokens
+            # Use real token counts from provider if available, else estimate
+            if real_usage:
+                in_tokens = real_usage["prompt_tokens"]
+                out_tokens = real_usage["completion_tokens"]
+                total_tokens = real_usage["total_tokens"]
+            else:
+                in_tokens = len(data.content) // 4
+                out_tokens = len(full_content) // 4
+                total_tokens = in_tokens + out_tokens
 
             from decimal import Decimal
-            est_cost = Decimal(str(round((est_in_tokens * 3 + est_out_tokens * 15) / 1_000_000, 6)))
+            est_cost = Decimal(str(round((in_tokens * 3 + out_tokens * 15) / 1_000_000, 6)))
 
             if cancelled:
                 # Cancelled: don't save message or update totals
-                yield f"data: {json.dumps({'done': True, 'message_id': '', 'latency_ms': stream_duration_ms, 'tokens_in': est_in_tokens, 'tokens_out': est_out_tokens, 'cost': float(est_cost)})}\n\n"
+                yield f"data: {json.dumps({'done': True, 'message_id': '', 'latency_ms': stream_duration_ms, 'tokens_in': in_tokens, 'tokens_out': out_tokens, 'cost': float(est_cost)})}\n\n"
             else:
                 # Save assistant message
                 assistant_msg = await chat_service.save_message(
@@ -111,7 +126,7 @@ async def chat_stream(
 
                 # Update conversation totals
                 await chat_service.update_conversation_tokens(
-                    conversation_id, est_total, est_cost
+                    conversation_id, total_tokens, est_cost
                 )
                 await chat_service.db.commit()
 
@@ -141,16 +156,16 @@ async def chat_stream(
                     except Exception:
                         pass
 
-                yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id), 'latency_ms': stream_duration_ms, 'tokens_in': est_in_tokens, 'tokens_out': est_out_tokens, 'cost': float(est_cost)})}\n\n"
+                yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id), 'latency_ms': stream_duration_ms, 'tokens_in': in_tokens, 'tokens_out': out_tokens, 'cost': float(est_cost)})}\n\n"
 
             # Log inference asynchronously via Redis
             from src.services.llm_providers import LLMResponse
 
             llm_response = LLMResponse(
                 content=full_content,
-                prompt_tokens=est_in_tokens,
-                completion_tokens=est_out_tokens,
-                total_tokens=est_total,
+                prompt_tokens=in_tokens,
+                completion_tokens=out_tokens,
+                total_tokens=total_tokens,
                 model=conversation.model,
                 provider=conversation.provider,
             )

@@ -102,14 +102,21 @@ class LLMService:
         provider: str,
         model: str,
     ) -> AsyncIterator[tuple[str, str]]:
-        """Yield (type, text) tuples. type is 'thinking' or 'text'."""
+        """Yield (type, text) tuples. type is 'thinking', 'text', or 'usage'."""
         litellm_model = self._litellm_model(provider, model)
         response = await litellm.acompletion(
             model=litellm_model,
             messages=messages,
             stream=True,
+            stream_options={"include_usage": True},
         )
         async for chunk in response:
+            # Final chunk: empty choices, usage present
+            if hasattr(chunk, "usage") and chunk.usage and (not chunk.choices or not chunk.choices[0].delta):
+                yield ("usage", f"{chunk.usage.prompt_tokens},{chunk.usage.completion_tokens},{chunk.usage.total_tokens}")
+                continue
+            if not chunk.choices:
+                continue
             delta = chunk.choices[0].delta
             if not delta:
                 continue
