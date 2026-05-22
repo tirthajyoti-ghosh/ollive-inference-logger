@@ -146,7 +146,8 @@ export default function ConversationsPage() {
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input-custom pl-9 py-2 text-[13px]"
+            className="input-custom py-2 text-[13px]"
+            style={{ paddingLeft: 36 }}
           />
         </div>
 
