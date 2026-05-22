@@ -2,10 +2,12 @@
 
 A lightweight, event-driven system for logging and analyzing LLM inference calls.
 Ollive captures latency, token usage, cost, and errors across multiple providers
-(OpenAI, Anthropic, Groq) and surfaces them through real-time dashboards. It
+(OpenAI, Anthropic, Groq, Gemini) and surfaces them through real-time dashboards. It
 includes a multi-turn chatbot that dogfoods the logging pipeline, a Python SDK
 for instrumenting external applications, and a streaming ingestion pipeline built
 on Redis Streams.
+
+**Live demo:** [ollive-frontend.onrender.com](https://ollive-frontend.onrender.com) (free tier — first load may take ~30s to wake)
 
 ## Architecture
 
