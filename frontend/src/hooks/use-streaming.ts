@@ -8,9 +8,13 @@ interface StreamCallbacks {
   onError: (error: string) => void;
 }
 
+const TYPEWRITER_CHUNK = 4;
+const TYPEWRITER_MS = 12;
+
 export function useStreaming() {
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const typewriterRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const startStream = useCallback(
     async (
@@ -20,12 +24,29 @@ export function useStreaming() {
       model: string,
       { onToken, onDone, onError }: StreamCallbacks
     ) => {
-      // Abort any existing stream
       abortRef.current?.abort();
 
       const controller = new AbortController();
       abortRef.current = controller;
       setIsStreaming(true);
+
+      let pendingDone: string | null = null;
+
+      const typewrite = (text: string, resolve: () => void) => {
+        let pos = 0;
+        const tick = () => {
+          if (controller.signal.aborted) { resolve(); return; }
+          const end = Math.min(pos + TYPEWRITER_CHUNK, text.length);
+          onToken(text.slice(pos, end));
+          pos = end;
+          if (pos < text.length) {
+            typewriterRef.current = setTimeout(tick, TYPEWRITER_MS);
+          } else {
+            resolve();
+          }
+        };
+        tick();
+      };
 
       try {
         const res = await fetch(
@@ -55,9 +76,8 @@ export function useStreaming() {
 
           buffer += decoder.decode(value, { stream: true });
 
-          // Process complete SSE lines
           const lines = buffer.split("\n");
-          buffer = lines.pop() || ""; // Keep incomplete line in buffer
+          buffer = lines.pop() || "";
 
           for (const line of lines) {
             const trimmed = line.trim();
@@ -67,9 +87,13 @@ export function useStreaming() {
             try {
               const data = JSON.parse(json);
               if (data.token) {
-                onToken(data.token);
+                if (data.token.length > 80) {
+                  await new Promise<void>((resolve) => typewrite(data.token, resolve));
+                } else {
+                  onToken(data.token);
+                }
               } else if (data.done) {
-                onDone(data.message_id || "");
+                pendingDone = data.message_id || "";
               } else if (data.error) {
                 onError(data.error);
               }
@@ -78,13 +102,18 @@ export function useStreaming() {
             }
           }
         }
+
+        if (pendingDone !== null) {
+          onDone(pendingDone);
+        }
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") {
-          // User cancelled — not an error
+          // User cancelled
         } else {
           onError(err instanceof Error ? err.message : "Stream error");
         }
       } finally {
+        if (typewriterRef.current) clearTimeout(typewriterRef.current);
         setIsStreaming(false);
         abortRef.current = null;
       }
@@ -93,6 +122,7 @@ export function useStreaming() {
   );
 
   const cancel = useCallback(() => {
+    if (typewriterRef.current) clearTimeout(typewriterRef.current);
     abortRef.current?.abort();
     setIsStreaming(false);
   }, []);

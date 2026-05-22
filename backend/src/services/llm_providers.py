@@ -23,6 +23,11 @@ PROVIDER_MODELS: dict[str, list[str]] = {
         "llama-3.1-8b-instant",
         "mixtral-8x7b-32768",
     ],
+    "gemini": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash",
+    ],
 }
 
 # Map provider names to litellm prefixes
@@ -30,6 +35,7 @@ _LITELLM_PREFIX: dict[str, str] = {
     "openai": "",
     "anthropic": "anthropic/",
     "groq": "groq/",
+    "gemini": "gemini/",
 }
 
 
@@ -41,6 +47,9 @@ def _configure_keys() -> None:
         litellm.anthropic_key = settings.anthropic_api_key
     if settings.groq_api_key:
         litellm.groq_key = settings.groq_api_key
+    if settings.gemini_api_key:
+        import os
+        os.environ["GEMINI_API_KEY"] = settings.gemini_api_key
 
 
 _configure_keys()
