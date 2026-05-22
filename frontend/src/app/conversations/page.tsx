@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   getConversations,
   updateConversation,
@@ -30,14 +30,15 @@ import {
 const PAGE_SIZE = 20;
 const STATUS_TABS = ["all", "active", "paused", "completed", "cancelled"] as const;
 
-export default function ConversationsPage() {
+function ConversationsInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") ?? "");
 
   const fetchConversations = useCallback(async () => {
     setLoading(true);
@@ -56,6 +57,15 @@ export default function ConversationsPage() {
   useEffect(() => {
     fetchConversations();
   }, [fetchConversations]);
+
+  // Client-side search filter
+  const filtered = searchQuery.trim()
+    ? conversations.filter((c) =>
+        (c.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.model.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : conversations;
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
@@ -81,16 +91,6 @@ export default function ConversationsPage() {
   const activeCount = conversations.filter((c) => c.status === "active").length;
   const totalTokens = conversations.reduce((s, c) => s + c.total_tokens, 0);
   const totalCost = conversations.reduce((s, c) => s + c.total_cost_usd, 0);
-
-  // Filter by search (client-side, on current page)
-  const filtered = searchQuery.trim()
-    ? conversations.filter(
-        (c) =>
-          (c.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.model.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : conversations;
 
   const rangeStart = page * PAGE_SIZE + 1;
   const rangeEnd = Math.min((page + 1) * PAGE_SIZE, total);
@@ -355,5 +355,14 @@ export default function ConversationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+
+export default function ConversationsPage() {
+  return (
+    <Suspense>
+      <ConversationsInner />
+    </Suspense>
   );
 }

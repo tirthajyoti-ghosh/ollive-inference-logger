@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   MessageSquare,
   List,
@@ -12,7 +13,6 @@ import {
   Settings,
   Hash,
   Search,
-  ChevronDown,
   ExternalLink,
 } from "lucide-react";
 
@@ -76,8 +76,34 @@ function NavGroup({ label, children }: { label: string; children: React.ReactNod
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const is = (path: string) => pathname === path || pathname.startsWith(path + "/");
   const dashSection = pathname.startsWith("/dashboard");
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // ⌘K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // Navigate to conversations with search query on Enter
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      router.push(`/conversations?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+    if (e.key === "Escape") {
+      setSearchQuery("");
+      searchRef.current?.blur();
+    }
+  };
 
   return (
     <aside
@@ -110,41 +136,41 @@ export function Sidebar() {
         </Link>
       </div>
 
-      {/* Workspace */}
-      <div className="px-3 mb-2">
-        <button className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--bg-2)] text-left">
-          <div className="flex items-center gap-2 min-w-0">
-            <span
-              className="w-5 h-5 rounded-[5px] flex items-center justify-center text-[10px] font-semibold text-white"
-              style={{ background: "oklch(0.55 0.1 235)" }}
-            >
-              SZ
-            </span>
-            <span className="text-[12.5px] truncate" style={{ color: "var(--ink)" }}>
-              suzega.com
-            </span>
-          </div>
-          <ChevronDown size={13} className="opacity-50" />
-        </button>
-      </div>
-
       {/* Search */}
       <div className="px-3 mb-3">
-        <button
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[12.5px] hover:bg-[var(--bg-2)]"
-          style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--muted-foreground)" }}
-        >
-          <Search size={13} />
-          <span>Search...</span>
-          <span className="ml-auto flex items-center gap-0.5">
-            <kbd className="inline-flex items-center justify-center px-1.5 min-w-[18px] h-[18px] rounded text-[10.5px] font-mono border" style={{ borderColor: "var(--border-strong)", background: "var(--surface)", color: "var(--ink-2)" }}>
-              ⌘
-            </kbd>
-            <kbd className="inline-flex items-center justify-center px-1.5 min-w-[18px] h-[18px] rounded text-[10.5px] font-mono border" style={{ borderColor: "var(--border-strong)", background: "var(--surface)", color: "var(--ink-2)" }}>
-              K
-            </kbd>
-          </span>
-        </button>
+        <div className="relative">
+          <Search
+            size={13}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: "var(--muted-foreground)" }}
+          />
+          <input
+            ref={searchRef}
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            className="w-full rounded-lg border text-[12.5px] focus:outline-none"
+            style={{
+              background: "var(--surface)",
+              borderColor: searchQuery ? "var(--olive-ring)" : "var(--border)",
+              color: "var(--ink)",
+              padding: "6px 10px 6px 30px",
+              boxShadow: searchQuery ? "0 0 0 3px oklch(0.78 0.06 130 / 0.25)" : "none",
+            }}
+          />
+          {!searchQuery && (
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 pointer-events-none">
+              <kbd className="inline-flex items-center justify-center px-1.5 min-w-[18px] h-[18px] rounded text-[10.5px] font-mono border" style={{ borderColor: "var(--border-strong)", background: "var(--surface)", color: "var(--ink-2)" }}>
+                ⌘
+              </kbd>
+              <kbd className="inline-flex items-center justify-center px-1.5 min-w-[18px] h-[18px] rounded text-[10.5px] font-mono border" style={{ borderColor: "var(--border-strong)", background: "var(--surface)", color: "var(--ink-2)" }}>
+                K
+              </kbd>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Nav */}
