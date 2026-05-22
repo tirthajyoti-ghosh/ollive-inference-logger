@@ -134,14 +134,15 @@ export function KpiCard({
       </div>
 
       {/* Value row */}
-      <div className="flex items-baseline gap-1.5">
+      <div className="flex items-baseline gap-1.5 min-w-0">
         <span
-          className="font-mono font-semibold leading-none"
+          className="font-mono font-semibold leading-none truncate"
           style={{
-            fontSize: 28,
+            fontSize: value.length > 12 ? 16 : 28,
             letterSpacing: "-0.02em",
             color: "var(--ink)",
           }}
+          title={value}
         >
           {value}
         </span>
