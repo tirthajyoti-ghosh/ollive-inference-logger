@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class MaterializedViewRefresher:
     """Periodically refreshes the inference_stats_hourly materialized view."""
 
-    def __init__(self, db_engine: AsyncEngine, interval_seconds: int = 300) -> None:
+    def __init__(self, db_engine: AsyncEngine, interval_seconds: int = 60) -> None:
         self._engine = db_engine
         self._interval = interval_seconds
 

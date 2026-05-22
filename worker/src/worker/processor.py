@@ -19,9 +19,13 @@ PRICING: dict[tuple[str, str], dict[str, float]] = {
     ("openai", "gpt-4o"): {"input": 2.50 / 1_000_000, "output": 10.00 / 1_000_000},
     ("openai", "gpt-4o-mini"): {"input": 0.15 / 1_000_000, "output": 0.60 / 1_000_000},
     ("openai", "gpt-3.5-turbo"): {"input": 0.50 / 1_000_000, "output": 1.50 / 1_000_000},
-    ("anthropic", "claude-sonnet-4-20250514"): {"input": 3.00 / 1_000_000, "output": 15.00 / 1_000_000},
-    ("anthropic", "claude-haiku-4-20250414"): {"input": 0.80 / 1_000_000, "output": 4.00 / 1_000_000},
-    ("groq", "llama-3.1-70b-versatile"): {"input": 0.59 / 1_000_000, "output": 0.79 / 1_000_000},
+    ("anthropic", "claude-sonnet-4-5-20250929"): {"input": 3.00 / 1_000_000, "output": 15.00 / 1_000_000},
+    ("anthropic", "claude-haiku-4-5-20251001"): {"input": 0.80 / 1_000_000, "output": 4.00 / 1_000_000},
+    ("groq", "llama-3.3-70b-versatile"): {"input": 0.59 / 1_000_000, "output": 0.79 / 1_000_000},
+    ("groq", "llama-3.1-8b-instant"): {"input": 0.05 / 1_000_000, "output": 0.08 / 1_000_000},
+    ("gemini", "gemini-2.5-flash"): {"input": 0.15 / 1_000_000, "output": 0.60 / 1_000_000},
+    ("gemini", "gemini-2.5-pro"): {"input": 1.25 / 1_000_000, "output": 10.00 / 1_000_000},
+    ("gemini", "gemini-2.0-flash"): {"input": 0.10 / 1_000_000, "output": 0.40 / 1_000_000},
 }
 
 

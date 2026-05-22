@@ -21,7 +21,6 @@ PROVIDER_MODELS: dict[str, list[str]] = {
     "groq": [
         "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant",
-        "gemma2-9b-it",
     ],
     "gemini": [
         "gemini-2.5-flash",
