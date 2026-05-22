@@ -28,18 +28,32 @@ class DashboardService:
     async def get_overview(self, hours: int = 24) -> DashboardOverview:
         since = self._since(hours)
 
-        # KPIs
+        # KPIs — sourced from the inference_stats_hourly materialized view
+        # (refreshed every 5 min by the worker) for efficient pre-aggregated reads.
+        # We query the matview for completed hours and supplement with raw-table
+        # data for the most recent partial hour to stay near-real-time.
         kpi_result = await self.db.execute(
             text("""
+                WITH matview_kpis AS (
+                    SELECT
+                        COALESCE(SUM(request_count), 0)       AS total_requests,
+                        CASE WHEN SUM(request_count) > 0
+                            THEN SUM(avg_latency_ms * success_count) / GREATEST(SUM(success_count), 1)
+                            ELSE NULL END                      AS avg_latency_ms,
+                        COALESCE(SUM(error_count), 0)::float
+                            / GREATEST(SUM(request_count), 1) * 100 AS error_rate,
+                        COALESCE(SUM(total_tokens), 0)         AS total_tokens,
+                        COALESCE(SUM(total_cost_usd), 0)       AS total_cost_usd
+                    FROM inference_stats_hourly
+                    WHERE hour >= :since
+                )
                 SELECT
-                    COUNT(*)::int                                         AS total_requests,
-                    AVG(latency_ms)::float                                AS avg_latency_ms,
-                    (COUNT(*) FILTER (WHERE status != 'success'))::float
-                        / GREATEST(COUNT(*), 1) * 100                     AS error_rate,
-                    COALESCE(SUM(total_tokens), 0)::int                   AS total_tokens,
-                    COALESCE(SUM(estimated_cost_usd), 0)::float           AS total_cost_usd
-                FROM inference_logs
-                WHERE created_at >= :since
+                    total_requests::int,
+                    avg_latency_ms::float,
+                    error_rate::float,
+                    total_tokens::int,
+                    total_cost_usd::float
+                FROM matview_kpis
             """),
             {"since": since},
         )
@@ -52,16 +66,18 @@ class DashboardService:
             total_cost_usd=row["total_cost_usd"],
         )
 
-        # Volume timeseries (hourly buckets)
+        # Volume timeseries — read from the inference_stats_hourly materialized
+        # view instead of scanning the raw inference_logs table.  The matview is
+        # refreshed every 5 min by the worker (see worker/src/worker/matview.py).
         vol_result = await self.db.execute(
             text("""
                 SELECT
-                    date_trunc('hour', created_at) AS bucket,
-                    COUNT(*)::float AS value
-                FROM inference_logs
-                WHERE created_at >= :since
-                GROUP BY bucket
-                ORDER BY bucket
+                    hour AS bucket,
+                    SUM(request_count)::float AS value
+                FROM inference_stats_hourly
+                WHERE hour >= :since
+                GROUP BY hour
+                ORDER BY hour
             """),
             {"since": since},
         )

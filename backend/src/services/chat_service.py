@@ -91,6 +91,7 @@ class ChatService:
         is_streaming: bool = False,
         stream_chunk_count: int | None = None,
         stream_duration_ms: int | None = None,
+        time_to_first_token_ms: int | None = None,
         input_preview: str | None = None,
         status: str = "success",
     ) -> None:
@@ -120,6 +121,8 @@ class ChatService:
             log_data["stream_chunk_count"] = str(stream_chunk_count)
         if stream_duration_ms is not None:
             log_data["stream_duration_ms"] = str(stream_duration_ms)
+        if time_to_first_token_ms is not None:
+            log_data["time_to_first_token_ms"] = str(time_to_first_token_ms)
 
         try:
             await self.redis.xadd("inference:logs", log_data)

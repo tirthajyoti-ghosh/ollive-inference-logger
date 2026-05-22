@@ -24,6 +24,13 @@ _STANDARD_PATTERNS: dict[str, re.Pattern[str]] = {
         r"(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
     ),
     "AADHAAR": re.compile(r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"),
+    "AWS_ACCESS_KEY": re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+    "AWS_SECRET_KEY": re.compile(
+        r"(?i)(?:aws_secret_access_key|aws_secret)\s*[=:]\s*"
+        r"[A-Za-z0-9/+=]{30,}"
+    ),
+    "API_KEY": re.compile(r"\b(?:sk|key)-[a-zA-Z0-9]{20,}\b"),
+    "BEARER_TOKEN": re.compile(r"\bBearer\s+[a-zA-Z0-9._\-]{10,}\b"),
 }
 
 _AGGRESSIVE_PATTERNS: dict[str, re.Pattern[str]] = {

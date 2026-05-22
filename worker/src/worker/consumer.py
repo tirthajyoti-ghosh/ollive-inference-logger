@@ -72,12 +72,10 @@ class InferenceLogConsumer:
                     if not messages:
                         continue
 
-                    msg_ids: list[bytes] = []
+                    ack_ids: list[bytes] = []
                     parsed_batch: list[dict[str, Any]] = []
-                    raw_entries: list[tuple[bytes, dict]] = []
 
                     for msg_id, fields in messages:
-                        msg_ids.append(msg_id)
                         try:
                             # Messages are stored as {"data": json_string}
                             raw_data = fields.get(b"data") or fields.get("data")
@@ -94,13 +92,14 @@ class InferenceLogConsumer:
                                 if isinstance(raw_data, bytes):
                                     raw_data = raw_data.decode()
                                 parsed_batch.append(json.loads(raw_data))
-                            raw_entries.append((msg_id, fields))
+                            ack_ids.append(msg_id)
                         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
                             logger.error(
                                 "Failed to parse message %s: %s", msg_id, exc
                             )
-                            raw_entries.append((msg_id, fields))
-                            # Count parsing failures for dead-letter handling
+                            # Don't ack — leave in pending for claim_stale to
+                            # retry.  _handle_failed_message tracks the retry
+                            # counter and DLQs after max_retries, then acks.
                             await self._handle_failed_message(
                                 msg_id, fields, str(exc)
                             )
@@ -113,9 +112,9 @@ class InferenceLogConsumer:
                             result.failed,
                         )
 
-                    # ACK all successfully read messages
-                    if msg_ids:
-                        await self._redis.xack(self._stream, self._group, *msg_ids)
+                    # ACK only successfully parsed messages
+                    if ack_ids:
+                        await self._redis.xack(self._stream, self._group, *ack_ids)
 
             except asyncio.CancelledError:
                 logger.info("Consumer '%s' cancelled, shutting down", consumer_name)
@@ -154,6 +153,8 @@ class InferenceLogConsumer:
             await self._redis.xadd(
                 self._settings.dead_letter_stream, dead_letter_fields
             )
+            # ACK the message so it leaves the pending list after DLQ
+            await self._redis.xack(self._stream, self._group, msg_id)
             await self._redis.delete(retry_key)
 
     async def claim_stale(self, consumer_name: str) -> None:

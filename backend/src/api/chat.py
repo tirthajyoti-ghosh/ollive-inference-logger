@@ -62,6 +62,7 @@ async def chat_stream(
         full_content = ""
         chunk_count = 0
         request_ts = datetime.now(timezone.utc)
+        first_token_ts = None
         cancelled = False
 
         try:
@@ -77,6 +78,8 @@ async def chat_stream(
                 if kind == "thinking":
                     yield f"data: {json.dumps({'thinking': token})}\n\n"
                 else:
+                    if first_token_ts is None:
+                        first_token_ts = datetime.now(timezone.utc)
                     full_content += token
                     chunk_count += 1
                     yield f"data: {json.dumps({'token': token})}\n\n"
@@ -149,6 +152,12 @@ async def chat_stream(
                 provider=conversation.provider,
             )
 
+            ttft_ms = (
+                int((first_token_ts - request_ts).total_seconds() * 1000)
+                if first_token_ts is not None
+                else None
+            )
+
             await chat_service.log_inference(
                 conversation_id=conversation_id,
                 message_id=assistant_msg.id,
@@ -160,6 +169,7 @@ async def chat_stream(
                 is_streaming=True,
                 stream_chunk_count=chunk_count,
                 stream_duration_ms=stream_duration_ms,
+                time_to_first_token_ms=ttft_ms,
                 input_preview=data.content[:500],
                 status="cancelled" if cancelled else "success",
             )
