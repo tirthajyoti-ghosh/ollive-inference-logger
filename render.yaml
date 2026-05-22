@@ -1,0 +1,73 @@
+databases:
+  - name: ollive-db
+    plan: free
+    databaseName: ollive
+    user: ollive
+
+services:
+  - type: redis
+    name: ollive-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  - type: web
+    name: ollive-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.prod
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ollive-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: ollive-redis
+          type: redis
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: INGEST_API_KEY
+        sync: false
+      - key: PII_REDACTION_ENABLED
+        value: "true"
+    healthCheckPath: /health
+
+  - type: worker
+    name: ollive-worker
+    runtime: docker
+    dockerfilePath: ./worker/Dockerfile
+    dockerContext: ./worker
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ollive-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: ollive-redis
+          type: redis
+          property: connectionString
+      - key: PII_REDACTION_ENABLED
+        value: "true"
+
+  - type: web
+    name: ollive-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile.prod
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: NODE_ENV
+        value: production

@@ -334,86 +334,32 @@ To tear down:
 kind delete cluster --name ollive
 ```
 
-## Railway Deployment
+## Render Deployment
 
-For a hosted deployment on [Railway](https://railway.app):
+The repo includes a `render.yaml` blueprint for one-click deploy on [Render](https://render.com):
 
-### 1. Create a Railway Project
+### One-click deploy
 
-```bash
-# Install Railway CLI
-brew install railway
+1. Push the repo to GitHub
+2. Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints)
+3. Click **New Blueprint Instance** → connect your repo
+4. Render creates all 5 services automatically: PostgreSQL, Redis, Backend, Worker, Frontend
 
-# Login and init
-railway login
-railway init
-```
+### Post-deploy setup
 
-### 2. Add Managed Services
+After the first deploy completes:
 
-In the Railway dashboard, add:
-- **PostgreSQL** plugin (provides `DATABASE_URL` automatically)
-- **Redis** plugin (provides `REDIS_URL` automatically)
+1. **Set API keys** — go to the `ollive-backend` service → Environment, fill in `GROQ_API_KEY` and/or `GEMINI_API_KEY`
+2. **Wire frontend → backend** — go to the `ollive-frontend` service → Environment, set `NEXT_PUBLIC_API_URL` to the backend's URL (e.g., `https://ollive-backend.onrender.com`)
+3. Redeploy both services to pick up the new env vars
 
-### 3. Deploy Backend
-
-Create a new service from the repo:
-- **Root directory:** `backend`
-- **Dockerfile path:** `Dockerfile.prod`
-- **Port:** `8000`
-
-Environment variables (set via Railway dashboard):
-```
-DATABASE_URL        → auto-injected by PostgreSQL plugin
-REDIS_URL           → auto-injected by Redis plugin
-OPENAI_API_KEY      → your key
-ANTHROPIC_API_KEY   → your key (optional)
-GROQ_API_KEY        → your key (optional)
-GEMINI_API_KEY      → your key (optional)
-INGEST_API_KEY      → generate a random key
-PII_REDACTION_ENABLED → true
-```
-
-The backend's `Dockerfile.prod` runs migrations automatically on startup via `scripts/start.sh`.
-
-### 4. Deploy Worker
-
-Create another service from the repo:
-- **Root directory:** `worker`
-- **Dockerfile path:** `Dockerfile`
-
-Environment variables:
-```
-DATABASE_URL        → reference the PostgreSQL plugin
-REDIS_URL           → reference the Redis plugin
-PII_REDACTION_ENABLED → true
-```
-
-### 5. Deploy Frontend
-
-Create a third service from the repo:
-- **Root directory:** `frontend`
-- **Dockerfile path:** `Dockerfile.prod`
-- **Port:** `3000`
-
-Environment variables:
-```
-NEXT_PUBLIC_API_URL → http://backend.railway.internal:8000
-```
-
-Railway's private networking lets the frontend server-side rewrite proxy talk to the backend without exposing it publicly.
-
-### 6. Custom Domain
-
-Assign a public domain to the **frontend** service only. The backend is accessed through the frontend's `/api/*` rewrite proxy, so it doesn't need a public URL.
-
-### Architecture on Railway
+### Architecture on Render
 
 ```
-Internet → Frontend (public domain)
+Internet → ollive-frontend (public)
               ↓ /api/* rewrite
-           Backend (private) ← Worker (private)
-              ↓                    ↓
-           PostgreSQL          Redis
-           (managed)          (managed)
+           ollive-backend (public) ← ollive-worker (background)
+              ↓                         ↓
+           ollive-db                ollive-redis
+           (managed PG)            (managed Redis)
 ```
