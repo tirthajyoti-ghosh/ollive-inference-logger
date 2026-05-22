@@ -76,6 +76,8 @@ export function ErrorRateChart({ data, loading }: ErrorRateChartProps) {
     );
   }
 
+  const showDots = data.length <= 2;
+
   return (
     <div className="card-lg p-6">
       <h3 className="font-semibold mb-5" style={{ fontSize: 13.5, color: "var(--ink)" }}>
@@ -112,7 +114,7 @@ export function ErrorRateChart({ data, loading }: ErrorRateChartProps) {
               stroke={ERR_COLOR}
               strokeWidth={1.5}
               fill="url(#errGrad)"
-              dot={false}
+              dot={showDots ? { r: 4, fill: ERR_COLOR, stroke: "#fff", strokeWidth: 2 } : false}
               activeDot={{ r: 3, fill: ERR_COLOR, stroke: "#fff", strokeWidth: 2 }}
               name="Error Rate"
             />

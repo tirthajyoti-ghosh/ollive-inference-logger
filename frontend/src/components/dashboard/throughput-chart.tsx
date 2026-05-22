@@ -72,6 +72,8 @@ export function RPMChart({ data, loading }: RPMChartProps) {
     );
   }
 
+  const showDots = data.length <= 2;
+
   return (
     <div className="card-lg p-6">
       <h3 className="font-semibold mb-5" style={{ fontSize: 13.5, color: "var(--ink)" }}>
@@ -103,7 +105,7 @@ export function RPMChart({ data, loading }: RPMChartProps) {
               stroke={OLIVE}
               strokeWidth={1.5}
               fill="url(#rpmGrad)"
-              dot={false}
+              dot={showDots ? { r: 4, fill: OLIVE, stroke: "#fff", strokeWidth: 2 } : false}
               activeDot={{ r: 3, fill: OLIVE, stroke: "#fff", strokeWidth: 2 }}
               name="RPM"
             />
@@ -217,6 +219,8 @@ export function CostChart({ data, loading }: CostChartProps) {
     );
   }
 
+  const showDots = data.length <= 2;
+
   return (
     <div className="card-lg p-6">
       <h3 className="font-semibold mb-5" style={{ fontSize: 13.5, color: "var(--ink)" }}>
@@ -260,7 +264,7 @@ export function CostChart({ data, loading }: CostChartProps) {
               strokeWidth={1.5}
               fill="url(#costGrad2)"
               name="Cost (USD)"
-              dot={false}
+              dot={showDots ? { r: 4, fill: GOLD, stroke: "#fff", strokeWidth: 2 } : false}
               activeDot={{ r: 3, fill: GOLD, stroke: "#fff", strokeWidth: 2 }}
             />
           </AreaChart>

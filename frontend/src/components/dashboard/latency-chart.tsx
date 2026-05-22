@@ -69,6 +69,8 @@ export function LatencyTimeseriesChart({ data, loading }: LatencyTimeseriesProps
     );
   }
 
+  const showDots = data.length <= 2;
+
   return (
     <div className="card-lg p-6">
       {/* Header with legend */}
@@ -128,7 +130,7 @@ export function LatencyTimeseriesChart({ data, loading }: LatencyTimeseriesProps
               dataKey="value"
               stroke={P50_COLOR}
               strokeWidth={2}
-              dot={false}
+              dot={showDots ? { r: 4, fill: P50_COLOR, stroke: "#fff", strokeWidth: 2 } : false}
               activeDot={{ r: 3, fill: P50_COLOR, stroke: "#fff", strokeWidth: 2 }}
               name="P50"
             />
@@ -138,7 +140,7 @@ export function LatencyTimeseriesChart({ data, loading }: LatencyTimeseriesProps
               dataKey="p95"
               stroke={P95_COLOR}
               strokeWidth={1.5}
-              dot={false}
+              dot={showDots ? { r: 4, fill: P95_COLOR, stroke: "#fff", strokeWidth: 2 } : false}
               activeDot={{ r: 3, fill: P95_COLOR, stroke: "#fff", strokeWidth: 2 }}
               name="P95"
               connectNulls
@@ -149,7 +151,7 @@ export function LatencyTimeseriesChart({ data, loading }: LatencyTimeseriesProps
               stroke={P99_COLOR}
               strokeWidth={1.5}
               strokeDasharray="4 3"
-              dot={false}
+              dot={showDots ? { r: 4, fill: P99_COLOR, stroke: "#fff", strokeWidth: 2 } : false}
               activeDot={{ r: 3, fill: P99_COLOR, stroke: "#fff", strokeWidth: 2 }}
               name="P99"
               connectNulls

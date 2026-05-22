@@ -77,6 +77,7 @@ export function VolumeChart({ data, loading }: VolumeChartProps) {
   // If no per-provider keys, fall back to "value"
   const useProviders = providerKeys.length > 0;
   const areaKeys = useProviders ? providerKeys : ["value"];
+  const showDots = data.length <= 2;
 
   return (
     <div className="card-lg p-6">
@@ -151,7 +152,7 @@ export function VolumeChart({ data, loading }: VolumeChartProps) {
                   stroke={color}
                   strokeWidth={1.5}
                   fill={`url(#vol-${key})`}
-                  dot={false}
+                  dot={showDots ? { r: 4, fill: color, stroke: "#fff", strokeWidth: 2 } : false}
                   activeDot={{ r: 3, fill: color, stroke: "#fff", strokeWidth: 2 }}
                   name={key.charAt(0).toUpperCase() + key.slice(1)}
                 />
