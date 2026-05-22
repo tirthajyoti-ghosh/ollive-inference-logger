@@ -22,10 +22,13 @@ database_url = os.environ.get(
     "DATABASE_URL",
     "postgresql+asyncpg://ollive:ollive_dev@localhost:5432/ollive",
 )
+_need_ssl = "sslmode=" in database_url or ".render.com" in database_url
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
 elif database_url.startswith("postgresql://") and "+asyncpg" not in database_url:
     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+if "?sslmode=" in database_url:
+    database_url = database_url.split("?")[0]
 config.set_main_option("sqlalchemy.url", database_url)
 
 
@@ -51,10 +54,19 @@ def do_run_migrations(connection):
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode using async engine."""
+    connect_args = {}
+    if _need_ssl:
+        import ssl
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
+        connect_args["ssl"] = ssl_ctx
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:

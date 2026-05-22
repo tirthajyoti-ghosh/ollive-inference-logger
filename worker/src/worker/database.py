@@ -5,12 +5,22 @@ from sqlalchemy.orm import DeclarativeBase
 
 from src.worker.config import settings
 
+import ssl as _ssl
+
+_connect_args = {}
+if settings.require_ssl:
+    _ssl_ctx = _ssl.create_default_context()
+    _ssl_ctx.check_hostname = False
+    _ssl_ctx.verify_mode = _ssl.CERT_NONE
+    _connect_args["ssl"] = _ssl_ctx
+
 engine = create_async_engine(
     settings.database_url,
     echo=False,
     pool_size=20,
     max_overflow=10,
     pool_pre_ping=True,
+    connect_args=_connect_args,
 )
 
 async_session_factory = async_sessionmaker(

@@ -12,7 +12,15 @@ class Settings(BaseSettings):
             v = v.replace("postgres://", "postgresql+asyncpg://", 1)
         elif v.startswith("postgresql://") and "+asyncpg" not in v:
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if "?sslmode=" in v:
+            v = v.split("?")[0]
         return v
+
+    @property
+    def require_ssl(self) -> bool:
+        raw = self.model_fields["database_url"].default
+        env_url = __import__("os").environ.get("DATABASE_URL", raw)
+        return "sslmode=" in env_url or ".render.com" in env_url
     redis_url: str = "redis://localhost:6379"
     openai_api_key: str = ""
     anthropic_api_key: str = ""

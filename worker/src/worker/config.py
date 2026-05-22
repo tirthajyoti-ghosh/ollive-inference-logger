@@ -12,7 +12,14 @@ class WorkerSettings(BaseSettings):
             v = v.replace("postgres://", "postgresql+asyncpg://", 1)
         elif v.startswith("postgresql://") and "+asyncpg" not in v:
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if "?sslmode=" in v:
+            v = v.split("?")[0]
         return v
+
+    @property
+    def require_ssl(self) -> bool:
+        env_url = __import__("os").environ.get("DATABASE_URL", "")
+        return "sslmode=" in env_url or ".render.com" in env_url
     redis_url: str = "redis://localhost:6379"
     pii_redaction_enabled: bool = True
     consumer_group: str = "ingestion-workers"
