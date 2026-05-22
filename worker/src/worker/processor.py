@@ -137,10 +137,10 @@ class ProcessingPipeline:
                 # 1. Parse and validate
                 log_data = InferenceLogData.model_validate(raw)
 
-                # 2. Redact PII
-                if log_data.input_preview:
+                # 2. Redact PII (skip if SDK already redacted — [REDACTED: markers present)
+                if log_data.input_preview and "[REDACTED:" not in log_data.input_preview:
                     log_data.input_preview = self._redactor.redact(log_data.input_preview)
-                if log_data.output_preview:
+                if log_data.output_preview and "[REDACTED:" not in log_data.output_preview:
                     log_data.output_preview = self._redactor.redact(log_data.output_preview)
 
                 # 3. Enrich: estimate cost if not already set

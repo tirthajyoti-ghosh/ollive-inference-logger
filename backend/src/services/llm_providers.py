@@ -16,7 +16,7 @@ PROVIDER_MODELS: dict[str, list[str]] = {
     ],
     "anthropic": [
         "claude-sonnet-4-20250514",
-        "claude-haiku-4-20250414",
+        "claude-haiku-4-5-20251001",
     ],
     "groq": [
         "llama-3.1-70b-versatile",

@@ -1,15 +1,22 @@
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header, HTTPException
 from redis.asyncio import Redis
 
+from src.config import settings
 from src.deps import get_redis
 from src.schemas.inference_log import InferenceLogCreate
 
 router = APIRouter(prefix="/api/v1", tags=["ingest"])
 
 
-@router.post("/ingest", status_code=202)
+async def verify_ingest_key(x_ollive_api_key: str | None = Header(None)):
+    expected = getattr(settings, "ingest_api_key", "")
+    if expected and x_ollive_api_key != expected:
+        raise HTTPException(status_code=401, detail="Invalid or missing X-Ollive-API-Key")
+
+
+@router.post("/ingest", status_code=202, dependencies=[Depends(verify_ingest_key)])
 async def ingest_logs(
     logs: list[InferenceLogCreate],
     redis: Redis = Depends(get_redis),

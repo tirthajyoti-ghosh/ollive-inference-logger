@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     groq_api_key: str = ""
     gemini_api_key: str = ""
+    ingest_api_key: str = ""
     ollive_ingest_endpoint: str = "http://localhost:8000/api/v1/ingest"
     pii_redaction_enabled: bool = True
 
