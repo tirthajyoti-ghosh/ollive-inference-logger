@@ -97,8 +97,42 @@ async def chat_stream(
             est_out_tokens = len(full_content) // 4
             est_total = est_in_tokens + est_out_tokens
 
+            est_cost = round((est_in_tokens * 3 + est_out_tokens * 15) / 1_000_000, 6)
+
+            # Update conversation totals directly so header refresh sees them
+            await chat_service.update_conversation_tokens(
+                conversation_id, est_total, est_cost
+            )
+            await chat_service.db.commit()
+
+            # Auto-generate title on first exchange (2 messages = user + assistant)
+            conv_messages = await chat_service.get_context_messages(conversation_id)
+            if len(conv_messages) == 2 and not conversation.title:
+                try:
+                    title_resp = await chat_service.llm_service.complete(
+                        messages=[
+                            {"role": "system", "content": "Generate a short title (max 6 words) for this conversation. Reply with ONLY the title, no quotes or punctuation."},
+                            {"role": "user", "content": data.content},
+                            {"role": "assistant", "content": full_content[:500]},
+                            {"role": "user", "content": "Title:"},
+                        ],
+                        provider=conversation.provider,
+                        model=conversation.model,
+                    )
+                    title = title_resp.content.strip().strip('"').strip("'")[:80]
+                    if title:
+                        from sqlalchemy import update as sql_update
+                        await chat_service.db.execute(
+                            sql_update(Conversation)
+                            .where(Conversation.id == conversation_id)
+                            .values(title=title)
+                        )
+                        await chat_service.db.commit()
+                except Exception:
+                    pass
+
             # Send final event with stats
-            yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id), 'latency_ms': stream_duration_ms, 'tokens_in': est_in_tokens, 'tokens_out': est_out_tokens, 'cost': round((est_in_tokens * 3 + est_out_tokens * 15) / 1_000_000, 6)})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id), 'latency_ms': stream_duration_ms, 'tokens_in': est_in_tokens, 'tokens_out': est_out_tokens, 'cost': est_cost})}\n\n"
 
             # Log inference asynchronously via Redis
             from src.services.llm_providers import LLMResponse
