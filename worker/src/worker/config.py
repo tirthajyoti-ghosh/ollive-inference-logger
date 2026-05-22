@@ -9,9 +9,10 @@ class WorkerSettings(BaseSettings):
     @classmethod
     def fix_db_scheme(cls, v: str) -> str:
         if v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql+asyncpg://", 1)
-        if v.startswith("postgresql://"):
-            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://") and "+asyncpg" not in v:
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        v = v.replace("sslmode=", "ssl=")
         return v
     redis_url: str = "redis://localhost:6379"
     pii_redaction_enabled: bool = True
