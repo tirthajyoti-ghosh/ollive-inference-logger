@@ -163,8 +163,8 @@ export default function ConversationPage({
 
           {messages.map((msg, i) => {
             const isCurrent = isStreaming && i === messages.length - 1 && msg.role === "assistant";
-            // Don't render the empty assistant placeholder — show ThinkingIndicator instead
-            if (isCurrent && msg.content === "") return null;
+            // Show thinking indicator if no thinking and no content yet
+            if (isCurrent && !msg.content && !msg.thinking) return null;
             return (
               <MessageBubble
                 key={msg.id}
@@ -174,8 +174,8 @@ export default function ConversationPage({
             );
           })}
 
-          {/* Thinking indicator — shown when streaming hasn't produced content yet */}
-          {isStreaming && (!streamingMsg || streamingMsg.content === "") && (
+          {/* Thinking indicator — only when no thinking tokens have arrived yet */}
+          {isStreaming && streamingMsg && !streamingMsg.content && !streamingMsg.thinking && (
             <StreamingPlaceholder />
           )}
 

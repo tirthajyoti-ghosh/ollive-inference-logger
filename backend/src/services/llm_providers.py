@@ -101,7 +101,8 @@ class LLMService:
         messages: list[dict[str, str]],
         provider: str,
         model: str,
-    ) -> AsyncIterator[str]:
+    ) -> AsyncIterator[tuple[str, str]]:
+        """Yield (type, text) tuples. type is 'thinking' or 'text'."""
         litellm_model = self._litellm_model(provider, model)
         response = await litellm.acompletion(
             model=litellm_model,
@@ -110,8 +111,13 @@ class LLMService:
         )
         async for chunk in response:
             delta = chunk.choices[0].delta
-            if delta and delta.content:
-                yield delta.content
+            if not delta:
+                continue
+            thinking = getattr(delta, "reasoning_content", None) or getattr(delta, "thought", None)
+            if thinking:
+                yield ("thinking", thinking)
+            if delta.content:
+                yield ("text", delta.content)
 
     @staticmethod
     def list_providers() -> dict[str, list[str]]:

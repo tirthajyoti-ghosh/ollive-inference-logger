@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 
 interface StreamCallbacks {
+  onThinking: (token: string) => void;
   onToken: (token: string) => void;
   onDone: (messageId: string) => void;
   onError: (error: string) => void;
@@ -22,7 +23,7 @@ export function useStreaming() {
       content: string,
       provider: string,
       model: string,
-      { onToken, onDone, onError }: StreamCallbacks
+      { onThinking, onToken, onDone, onError }: StreamCallbacks
     ) => {
       abortRef.current?.abort();
 
@@ -86,7 +87,9 @@ export function useStreaming() {
             const json = trimmed.slice(6);
             try {
               const data = JSON.parse(json);
-              if (data.token) {
+              if (data.thinking) {
+                onThinking(data.thinking);
+              } else if (data.token) {
                 if (data.token.length > 80) {
                   await new Promise<void>((resolve) => typewrite(data.token, resolve));
                 } else {

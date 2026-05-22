@@ -64,18 +64,20 @@ async def chat_stream(
         request_ts = datetime.now(timezone.utc)
 
         try:
-            async for token in chat_service.llm_service.stream(
+            async for kind, token in chat_service.llm_service.stream(
                 messages=context,
                 provider=conversation.provider,
                 model=conversation.model,
             ):
-                # Check if client disconnected
                 if await request.is_disconnected():
                     break
 
-                full_content += token
-                chunk_count += 1
-                yield f"data: {json.dumps({'token': token})}\n\n"
+                if kind == "thinking":
+                    yield f"data: {json.dumps({'thinking': token})}\n\n"
+                else:
+                    full_content += token
+                    chunk_count += 1
+                    yield f"data: {json.dumps({'token': token})}\n\n"
 
             response_ts = datetime.now(timezone.utc)
             stream_duration_ms = int(

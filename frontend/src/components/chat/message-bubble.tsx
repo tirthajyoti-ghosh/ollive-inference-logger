@@ -1,7 +1,7 @@
 "use client";
 
 import { cn, relativeTime } from "@/lib/utils";
-import { User, Sparkles, Copy, Check } from "lucide-react";
+import { User, Sparkles, Copy, Check, ChevronDown, Brain } from "lucide-react";
 import { useState, useCallback } from "react";
 import type { ChatMessage } from "@/hooks/use-chat";
 
@@ -167,6 +167,45 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function ThinkingBlock({ text, isStreaming }: { text: string; isStreaming?: boolean }) {
+  const [expanded, setExpanded] = useState(isStreaming ?? false);
+
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium transition-colors"
+        style={{
+          background: "var(--olive-soft)",
+          color: "var(--olive-fg)",
+          border: "1px solid oklch(0.85 0.05 130)",
+        }}
+      >
+        <Brain size={12} />
+        {isStreaming ? "Thinking..." : "Thought process"}
+        <ChevronDown
+          size={12}
+          className="transition-transform"
+          style={{ transform: expanded ? "rotate(180deg)" : "rotate(0)" }}
+        />
+      </button>
+      {(expanded || isStreaming) && (
+        <div
+          className="mt-2 px-3 py-2.5 rounded-[10px] text-[12.5px] leading-relaxed font-mono overflow-x-auto max-h-[300px] overflow-y-auto whitespace-pre-wrap"
+          style={{
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            color: "var(--muted-foreground)",
+          }}
+        >
+          {text}
+          {isStreaming && <span className="caret" />}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MessageBubble({ message, isStreaming }: { message: ChatMessage; isStreaming?: boolean }) {
   const isUser = message.role === "user";
 
@@ -199,6 +238,13 @@ export function MessageBubble({ message, isStreaming }: { message: ChatMessage; 
           </div>
         ) : (
           <div>
+            {/* Thinking block */}
+            {message.thinking && (
+              <ThinkingBlock
+                text={message.thinking}
+                isStreaming={isStreaming && !message.content}
+              />
+            )}
             {renderMarkdown(message.content)}
             {isStreaming && <span className="caret" />}
           </div>
