@@ -49,6 +49,13 @@ export default function ConversationPage({
       .finally(() => setLoading(false));
   }, [id, hydrate]);
 
+  /* Abort any in-flight stream + typewriter when the page unmounts */
+  useEffect(() => {
+    return () => {
+      cancel();
+    };
+  }, [cancel]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;

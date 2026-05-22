@@ -38,8 +38,6 @@ export default function ErrorsPage() {
           icon={AlertTriangle}
           iconBg="var(--err-soft)"
           iconColor="oklch(0.4 0.1 25)"
-          delta="0.4%"
-          deltaPositive={false}
           loading={loading}
         />
         <KpiCard

@@ -62,6 +62,7 @@ async def chat_stream(
         full_content = ""
         chunk_count = 0
         request_ts = datetime.now(timezone.utc)
+        cancelled = False
 
         try:
             async for kind, token in chat_service.llm_service.stream(
@@ -70,6 +71,7 @@ async def chat_stream(
                 model=conversation.model,
             ):
                 if await request.is_disconnected():
+                    cancelled = True
                     break
 
                 if kind == "thinking":
@@ -159,6 +161,7 @@ async def chat_stream(
                 stream_chunk_count=chunk_count,
                 stream_duration_ms=stream_duration_ms,
                 input_preview=data.content[:500],
+                status="cancelled" if cancelled else "success",
             )
 
         except Exception as e:

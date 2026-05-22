@@ -19,7 +19,10 @@ export default function DashboardOverviewPage() {
   const hours = Number(searchParams.get("hours") ?? 24);
   const { data, loading } = useOverview({ hours, refreshInterval: 30_000 });
 
-  /* Build spark data from volume timeseries */
+  /* Build spark data from volume timeseries — only used for Total Requests
+     since the API only provides one timeseries; other KPIs don't have
+     per-metric sparkline data so we omit them rather than show misleading
+     identical sparklines. */
   const sparkVolume = (data?.volume_timeseries ?? []).map((p) => p.value);
 
   return (
@@ -32,8 +35,6 @@ export default function DashboardOverviewPage() {
           icon={Activity}
           iconBg="var(--olive-soft)"
           iconColor="var(--olive-fg)"
-          delta="12.4%"
-          deltaPositive
           sparkData={sparkVolume}
           sparkColor="var(--olive)"
           loading={loading}
@@ -45,10 +46,6 @@ export default function DashboardOverviewPage() {
           icon={Clock}
           iconBg="var(--info-soft)"
           iconColor="oklch(0.38 0.08 235)"
-          delta="3.2%"
-          deltaPositive
-          sparkData={sparkVolume}
-          sparkColor="var(--info)"
           loading={loading}
         />
         <KpiCard
@@ -57,10 +54,6 @@ export default function DashboardOverviewPage() {
           icon={AlertTriangle}
           iconBg="var(--err-soft)"
           iconColor="oklch(0.4 0.1 25)"
-          delta="0.4%"
-          deltaPositive={false}
-          sparkData={sparkVolume}
-          sparkColor="var(--err)"
           loading={loading}
         />
         <KpiCard
@@ -69,8 +62,6 @@ export default function DashboardOverviewPage() {
           icon={Hash}
           iconBg="var(--olive-soft)"
           iconColor="var(--olive-fg)"
-          sparkData={sparkVolume}
-          sparkColor="var(--olive)"
           loading={loading}
         />
         <KpiCard
@@ -79,8 +70,6 @@ export default function DashboardOverviewPage() {
           icon={Coins}
           iconBg="var(--warn-soft)"
           iconColor="oklch(0.38 0.08 60)"
-          sparkData={sparkVolume}
-          sparkColor="oklch(0.72 0.12 75)"
           loading={loading}
         />
       </div>

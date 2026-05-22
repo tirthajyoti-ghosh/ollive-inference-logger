@@ -6,7 +6,7 @@ up:
 	@sleep 8
 	docker compose run --rm migrate
 	@echo ""
-	@echo "Ready! Open http://localhost:3000"
+	@echo "Ready! Open http://localhost:3001"
 
 down:
 	docker compose down

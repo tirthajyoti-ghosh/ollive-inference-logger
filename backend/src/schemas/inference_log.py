@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class InferenceLogCreate(BaseModel):
+    id: uuid.UUID | None = None
     conversation_id: uuid.UUID | None = None
     message_id: uuid.UUID | None = None
     session_id: str | None = None
@@ -27,7 +28,7 @@ class InferenceLogCreate(BaseModel):
     is_streaming: bool = False
     stream_chunk_count: int | None = None
     stream_duration_ms: int | None = None
-    metadata_: dict = {}
+    metadata_: dict = Field(default_factory=dict, validation_alias="metadata")
 
 
 class InferenceLogResponse(BaseModel):

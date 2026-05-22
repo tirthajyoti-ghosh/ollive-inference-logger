@@ -51,7 +51,7 @@ make up
 make seed
 
 # Open the app
-open http://localhost:3000
+open http://localhost:3001
 ```
 
 ## Features

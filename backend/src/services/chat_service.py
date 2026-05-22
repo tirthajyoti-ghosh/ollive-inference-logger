@@ -92,6 +92,7 @@ class ChatService:
         stream_chunk_count: int | None = None,
         stream_duration_ms: int | None = None,
         input_preview: str | None = None,
+        status: str = "success",
     ) -> None:
         """Publish inference log to Redis Streams for async persistence."""
         latency_ms = int(
@@ -109,7 +110,7 @@ class ChatService:
             "prompt_tokens": str(llm_response.prompt_tokens),
             "completion_tokens": str(llm_response.completion_tokens),
             "total_tokens": str(llm_response.total_tokens),
-            "status": "success",
+            "status": status,
             "is_streaming": str(is_streaming).lower(),
             "input_preview": (input_preview or "")[:500],
             "output_preview": (llm_response.content or "")[:500],
