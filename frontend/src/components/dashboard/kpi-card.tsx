@@ -62,6 +62,7 @@ interface KpiCardProps {
   deltaPositive?: boolean;
   sparkData?: number[];
   sparkColor?: string;
+  pill?: boolean;
   icon: LucideIcon;
   iconBg: string;
   iconColor: string;
@@ -74,6 +75,7 @@ export function KpiCard({
   unit,
   delta,
   deltaPositive,
+  pill,
   sparkData,
   sparkColor = "var(--olive)",
   icon: Icon,
@@ -135,17 +137,32 @@ export function KpiCard({
 
       {/* Value row */}
       <div className="flex items-baseline gap-1.5 min-w-0">
-        <span
-          className="font-mono font-semibold leading-none truncate"
-          style={{
-            fontSize: value.length > 12 ? 16 : 28,
-            letterSpacing: "-0.02em",
-            color: "var(--ink)",
-          }}
-          title={value}
-        >
-          {value}
-        </span>
+        {pill && value !== "-" ? (
+          <span
+            className="font-mono font-medium truncate rounded-full px-3 py-1"
+            style={{
+              fontSize: 12,
+              color: "oklch(0.4 0.1 25)",
+              background: "var(--err-soft)",
+              maxWidth: "100%",
+            }}
+            title={value}
+          >
+            {value}
+          </span>
+        ) : (
+          <span
+            className="font-mono font-semibold leading-none truncate"
+            style={{
+              fontSize: value.length > 12 ? 16 : 28,
+              letterSpacing: "-0.02em",
+              color: "var(--ink)",
+            }}
+            title={value}
+          >
+            {value}
+          </span>
+        )}
         {unit && (
           <span
             className="font-medium"

@@ -51,6 +51,7 @@ export default function ErrorsPage() {
         <KpiCard
           label="Top Error"
           value={topError ? topError.error_type : "-"}
+          pill
           icon={ShieldAlert}
           iconBg="var(--warn-soft)"
           iconColor="oklch(0.38 0.08 60)"
