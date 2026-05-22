@@ -125,7 +125,8 @@ export function useStreaming() {
         }
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") {
-          // User cancelled
+          // User cancelled — notify backend
+          fetch(`/api/conversations/${conversationId}/cancel`, { method: "POST" }).catch(() => {});
         } else {
           onError(err instanceof Error ? err.message : "Stream error");
         }

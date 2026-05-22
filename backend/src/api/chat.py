@@ -1,20 +1,58 @@
 import asyncio
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import select, update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database import get_db
-from src.deps import get_chat_service
+from src.database import get_db, async_session_factory
+from src.deps import get_chat_service, get_llm_service
 from src.models.conversation import Conversation
 from src.schemas.message import ChatRequest, MessageResponse
 from src.services.chat_service import ChatService
+from src.services.llm_providers import LLMResponse, LLMService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/conversations/{conversation_id}", tags=["chat"])
+
+
+async def _generate_title(
+    conversation_id: uuid.UUID,
+    provider: str,
+    model: str,
+    user_content: str,
+    assistant_content: str,
+    llm_service: LLMService,
+):
+    """Background task: generate a title for the conversation after first exchange."""
+    try:
+        title_resp = await llm_service.complete(
+            messages=[
+                {"role": "system", "content": "Generate a short title (max 6 words) for this conversation. Reply with ONLY the title, no quotes or punctuation."},
+                {"role": "user", "content": user_content},
+                {"role": "assistant", "content": assistant_content[:500]},
+                {"role": "user", "content": "Title:"},
+            ],
+            provider=provider,
+            model=model,
+        )
+        title = title_resp.content.strip().strip('"').strip("'")[:80]
+        if title:
+            async with async_session_factory() as session:
+                await session.execute(
+                    sql_update(Conversation)
+                    .where(Conversation.id == conversation_id)
+                    .values(title=title)
+                )
+                await session.commit()
+            logger.info("Generated title for %s: %s", conversation_id, title)
+    except Exception:
+        logger.exception("Title generation failed for %s", conversation_id)
 
 
 @router.post("/chat", response_model=MessageResponse)
@@ -44,7 +82,6 @@ async def chat_stream(
 ):
     """SSE streaming chat endpoint."""
 
-    # Verify conversation exists
     result = await chat_service.db.execute(
         select(Conversation).where(Conversation.id == conversation_id)
     )
@@ -52,10 +89,7 @@ async def chat_stream(
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    # Save user message
     await chat_service.save_message(conversation_id, "user", data.content)
-
-    # Get context
     context = await chat_service.get_context_messages(conversation_id)
 
     async def event_generator():
@@ -99,7 +133,6 @@ async def chat_stream(
             )
             ttft_ms = int((first_token_ts - request_ts).total_seconds() * 1000) if first_token_ts else None
 
-            # Use real token counts from provider if available, else estimate
             if real_usage:
                 in_tokens = real_usage["prompt_tokens"]
                 out_tokens = real_usage["completion_tokens"]
@@ -118,9 +151,7 @@ async def chat_stream(
                 yield f"data: {json.dumps({'done': True, 'message_id': '', 'latency_ms': stream_duration_ms, 'tokens_in': in_tokens, 'tokens_out': out_tokens, 'cost': float(est_cost)})}\n\n"
             else:
                 assistant_msg = await chat_service.save_message(
-                    conversation_id,
-                    "assistant",
-                    full_content,
+                    conversation_id, "assistant", full_content,
                 )
                 assistant_msg_id = assistant_msg.id
                 await chat_service.db.commit()
@@ -130,36 +161,19 @@ async def chat_stream(
                 )
                 await chat_service.db.commit()
 
-                # Auto-generate title on first exchange
+                # Title generation — fire-and-forget background task
                 conv_messages = await chat_service.get_context_messages(conversation_id)
                 if len(conv_messages) == 2 and not conversation.title:
-                    try:
-                        title_resp = await chat_service.llm_service.complete(
-                            messages=[
-                                {"role": "system", "content": "Generate a short title (max 6 words) for this conversation. Reply with ONLY the title, no quotes or punctuation."},
-                                {"role": "user", "content": data.content},
-                                {"role": "assistant", "content": full_content[:500]},
-                                {"role": "user", "content": "Title:"},
-                            ],
-                            provider=conversation.provider,
-                            model=conversation.model,
-                        )
-                        title = title_resp.content.strip().strip('"').strip("'")[:80]
-                        if title:
-                            from sqlalchemy import update as sql_update
-                            await chat_service.db.execute(
-                                sql_update(Conversation)
-                                .where(Conversation.id == conversation_id)
-                                .values(title=title)
-                            )
-                            await chat_service.db.commit()
-                    except Exception:
-                        pass
+                    asyncio.create_task(_generate_title(
+                        conversation_id=conversation_id,
+                        provider=conversation.provider,
+                        model=conversation.model,
+                        user_content=data.content,
+                        assistant_content=full_content,
+                        llm_service=chat_service.llm_service,
+                    ))
 
                 yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg_id), 'latency_ms': stream_duration_ms, 'tokens_in': in_tokens, 'tokens_out': out_tokens, 'cost': float(est_cost)})}\n\n"
-
-            # Log inference via Redis
-            from src.services.llm_providers import LLMResponse
 
             llm_response = LLMResponse(
                 content=full_content,
@@ -168,12 +182,6 @@ async def chat_stream(
                 total_tokens=total_tokens,
                 model=conversation.model,
                 provider=conversation.provider,
-            )
-
-            ttft_ms = (
-                int((first_token_ts - request_ts).total_seconds() * 1000)
-                if first_token_ts is not None
-                else None
             )
 
             await chat_service.log_inference(
@@ -215,3 +223,28 @@ async def chat_stream(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.post("/cancel")
+async def cancel_stream(
+    conversation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Explicit cancel endpoint. Marks the conversation as paused so the
+    frontend can display the correct state. The actual stream abort is
+    driven by the client closing the SSE connection (AbortController)."""
+    result = await db.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = result.scalar_one_or_none()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    if conversation.status == "active":
+        await db.execute(
+            sql_update(Conversation)
+            .where(Conversation.id == conversation_id)
+            .values(status="paused")
+        )
+
+    return {"status": "cancelled", "conversation_id": str(conversation_id)}
