@@ -132,13 +132,20 @@ export default function ConversationPage({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 mt-0.5 text-[11.5px] font-mono" style={{ color: "var(--muted-foreground)" }}>
-            <span className="badge badge-olive text-[10.5px]">{provider} · {model}</span>
-            <span>·</span>
+          <div className="flex items-center gap-2 mt-0.5 text-[11.5px] font-mono" style={{ color: "var(--muted-foreground)" }}>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border text-[11.5px] px-2 py-0.5"
+              style={{ background: "oklch(0.96 0.02 130)", borderColor: "oklch(0.88 0.02 80)" }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--olive)" }} />
+              <span className="font-medium" style={{ color: "var(--ink)" }}>{provider.charAt(0).toUpperCase() + provider.slice(1)}</span>
+              <span className="opacity-70" style={{ color: "var(--ink-2)" }}>· {model}</span>
+            </span>
+            <span style={{ color: "var(--faint)" }}>·</span>
             <span>{messages.length} messages</span>
-            <span>·</span>
+            <span style={{ color: "var(--faint)" }}>·</span>
             <span>{formatTokens(conversation?.total_tokens ?? 0)} tokens</span>
-            <span>·</span>
+            <span style={{ color: "var(--faint)" }}>·</span>
             <span>{formatCurrency(conversation?.total_cost_usd ?? 0)}</span>
           </div>
         </div>

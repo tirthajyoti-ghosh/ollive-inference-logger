@@ -11,6 +11,10 @@ export interface ChatMessage {
   thinking?: string;
   created_at: string;
   streaming?: boolean;
+  latency_ms?: number;
+  tokens_in?: number;
+  tokens_out?: number;
+  cost?: number;
 }
 
 export function useChat(conversationId: string, provider: string, model: string) {

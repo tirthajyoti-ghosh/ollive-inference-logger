@@ -92,8 +92,12 @@ export function ChatInput({
             {/* Provider badge (left) */}
             <div className="flex items-center gap-2 text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
               {providerLabel && (
-                <span className="badge badge-olive text-[10.5px]">
-                  {providerLabel}
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border text-[11.5px] px-2 py-0.5"
+                  style={{ background: "oklch(0.96 0.02 130)", borderColor: "oklch(0.88 0.02 80)" }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--olive)" }} />
+                  <span className="font-medium" style={{ color: "var(--ink)" }}>{providerLabel}</span>
                 </span>
               )}
             </div>
