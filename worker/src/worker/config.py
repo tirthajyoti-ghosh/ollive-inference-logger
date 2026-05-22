@@ -12,8 +12,6 @@ class WorkerSettings(BaseSettings):
             v = v.replace("postgres://", "postgresql+asyncpg://", 1)
         elif v.startswith("postgresql://") and "+asyncpg" not in v:
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
-        if "sslmode=" in v:
-            v = v.split("?")[0] + "?ssl=true"
         return v
     redis_url: str = "redis://localhost:6379"
     pii_redaction_enabled: bool = True

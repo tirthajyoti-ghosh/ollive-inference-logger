@@ -7,9 +7,6 @@ case "$DATABASE_URL" in
   postgresql://*) export DATABASE_URL="postgresql+asyncpg://${DATABASE_URL#postgresql://}" ;;
 esac
 
-# asyncpg uses ssl=true, not sslmode=require
-export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|?sslmode=[a-z]*|?ssl=true|')
-
 echo "Running database migrations..."
 alembic upgrade head
 

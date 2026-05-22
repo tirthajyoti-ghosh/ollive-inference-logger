@@ -12,8 +12,6 @@ class Settings(BaseSettings):
             v = v.replace("postgres://", "postgresql+asyncpg://", 1)
         elif v.startswith("postgresql://") and "+asyncpg" not in v:
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
-        if "sslmode=" in v:
-            v = v.split("?")[0] + "?ssl=true"
         return v
     redis_url: str = "redis://localhost:6379"
     openai_api_key: str = ""
