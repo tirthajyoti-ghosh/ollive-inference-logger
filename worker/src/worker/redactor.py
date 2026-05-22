@@ -47,9 +47,14 @@ class DeepRedactor:
     def __init__(self) -> None:
         try:
             from presidio_analyzer import AnalyzerEngine
+            from presidio_analyzer.nlp_engine import NlpEngineProvider
             from presidio_anonymizer import AnonymizerEngine
 
-            self._analyzer = AnalyzerEngine()
+            provider = NlpEngineProvider(nlp_configuration={
+                "nlp_engine_name": "spacy",
+                "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}],
+            })
+            self._analyzer = AnalyzerEngine(nlp_engine=provider.create_engine())
             self._anonymizer = AnonymizerEngine()
             # Warm up: run a small analysis to verify spaCy model is loaded
             self._analyzer.analyze(text="test", language="en", entities=["PERSON"])

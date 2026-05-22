@@ -336,3 +336,87 @@ To tear down:
 ```bash
 kind delete cluster --name ollive
 ```
+
+## Railway Deployment
+
+For a hosted deployment on [Railway](https://railway.app):
+
+### 1. Create a Railway Project
+
+```bash
+# Install Railway CLI
+brew install railway
+
+# Login and init
+railway login
+railway init
+```
+
+### 2. Add Managed Services
+
+In the Railway dashboard, add:
+- **PostgreSQL** plugin (provides `DATABASE_URL` automatically)
+- **Redis** plugin (provides `REDIS_URL` automatically)
+
+### 3. Deploy Backend
+
+Create a new service from the repo:
+- **Root directory:** `backend`
+- **Dockerfile path:** `Dockerfile.prod`
+- **Port:** `8000`
+
+Environment variables (set via Railway dashboard):
+```
+DATABASE_URL        → auto-injected by PostgreSQL plugin
+REDIS_URL           → auto-injected by Redis plugin
+OPENAI_API_KEY      → your key
+ANTHROPIC_API_KEY   → your key (optional)
+GROQ_API_KEY        → your key (optional)
+GEMINI_API_KEY      → your key (optional)
+INGEST_API_KEY      → generate a random key
+PII_REDACTION_ENABLED → true
+```
+
+The backend's `Dockerfile.prod` runs migrations automatically on startup via `scripts/start.sh`.
+
+### 4. Deploy Worker
+
+Create another service from the repo:
+- **Root directory:** `worker`
+- **Dockerfile path:** `Dockerfile`
+
+Environment variables:
+```
+DATABASE_URL        → reference the PostgreSQL plugin
+REDIS_URL           → reference the Redis plugin
+PII_REDACTION_ENABLED → true
+```
+
+### 5. Deploy Frontend
+
+Create a third service from the repo:
+- **Root directory:** `frontend`
+- **Dockerfile path:** `Dockerfile.prod`
+- **Port:** `3000`
+
+Environment variables:
+```
+NEXT_PUBLIC_API_URL → http://backend.railway.internal:8000
+```
+
+Railway's private networking lets the frontend server-side rewrite proxy talk to the backend without exposing it publicly.
+
+### 6. Custom Domain
+
+Assign a public domain to the **frontend** service only. The backend is accessed through the frontend's `/api/*` rewrite proxy, so it doesn't need a public URL.
+
+### Architecture on Railway
+
+```
+Internet → Frontend (public domain)
+              ↓ /api/* rewrite
+           Backend (private) ← Worker (private)
+              ↓                    ↓
+           PostgreSQL          Redis
+           (managed)          (managed)
+```
