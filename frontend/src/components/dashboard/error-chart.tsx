@@ -153,7 +153,7 @@ export function ErrorBreakdownChart({ data, loading }: ErrorBreakdownChartProps)
   }
 
   const chartData = data.map((d) => ({
-    name: d.type,
+    name: d.error_type,
     value: d.count,
   }));
 

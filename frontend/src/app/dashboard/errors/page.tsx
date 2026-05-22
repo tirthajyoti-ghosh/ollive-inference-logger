@@ -34,7 +34,7 @@ export default function ErrorsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           label="Error Rate"
-          value={data ? `${(errorRate * 100).toFixed(2)}%` : "-"}
+          value={data ? `${errorRate.toFixed(2)}%` : "-"}
           icon={AlertTriangle}
           iconBg="var(--err-soft)"
           iconColor="oklch(0.4 0.1 25)"
@@ -50,7 +50,7 @@ export default function ErrorsPage() {
         />
         <KpiCard
           label="Top Error"
-          value={topError ? topError.type : "-"}
+          value={topError ? topError.error_type : "-"}
           icon={ShieldAlert}
           iconBg="var(--warn-soft)"
           iconColor="oklch(0.38 0.08 60)"
