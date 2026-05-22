@@ -56,5 +56,5 @@ class InferenceLogResponse(BaseModel):
     is_streaming: bool
     stream_chunk_count: int | None
     stream_duration_ms: int | None
-    metadata_: dict
+    metadata: dict = Field(default_factory=dict, validation_alias="metadata_")
     created_at: datetime

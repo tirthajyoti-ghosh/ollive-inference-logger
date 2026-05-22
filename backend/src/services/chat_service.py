@@ -82,7 +82,7 @@ class ChatService:
     async def log_inference(
         self,
         conversation_id: uuid.UUID,
-        message_id: uuid.UUID,
+        message_id: uuid.UUID | None,
         provider: str,
         model: str,
         llm_response: LLMResponse,
@@ -102,7 +102,7 @@ class ChatService:
 
         log_data = {
             "conversation_id": str(conversation_id),
-            "message_id": str(message_id),
+            "message_id": str(message_id) if message_id else "",
             "provider": provider,
             "model": model,
             "request_timestamp": request_ts.isoformat(),

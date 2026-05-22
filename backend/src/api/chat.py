@@ -112,19 +112,19 @@ async def chat_stream(
             from decimal import Decimal
             est_cost = Decimal(str(round((in_tokens * 3 + out_tokens * 15) / 1_000_000, 6)))
 
+            assistant_msg_id = None
+
             if cancelled:
-                # Cancelled: don't save message or update totals
                 yield f"data: {json.dumps({'done': True, 'message_id': '', 'latency_ms': stream_duration_ms, 'tokens_in': in_tokens, 'tokens_out': out_tokens, 'cost': float(est_cost)})}\n\n"
             else:
-                # Save assistant message
                 assistant_msg = await chat_service.save_message(
                     conversation_id,
                     "assistant",
                     full_content,
                 )
+                assistant_msg_id = assistant_msg.id
                 await chat_service.db.commit()
 
-                # Update conversation totals
                 await chat_service.update_conversation_tokens(
                     conversation_id, total_tokens, est_cost
                 )
@@ -156,9 +156,9 @@ async def chat_stream(
                     except Exception:
                         pass
 
-                yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id), 'latency_ms': stream_duration_ms, 'tokens_in': in_tokens, 'tokens_out': out_tokens, 'cost': float(est_cost)})}\n\n"
+                yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg_id), 'latency_ms': stream_duration_ms, 'tokens_in': in_tokens, 'tokens_out': out_tokens, 'cost': float(est_cost)})}\n\n"
 
-            # Log inference asynchronously via Redis
+            # Log inference via Redis
             from src.services.llm_providers import LLMResponse
 
             llm_response = LLMResponse(
@@ -178,7 +178,7 @@ async def chat_stream(
 
             await chat_service.log_inference(
                 conversation_id=conversation_id,
-                message_id=assistant_msg.id,
+                message_id=assistant_msg_id,
                 provider=conversation.provider,
                 model=conversation.model,
                 llm_response=llm_response,
