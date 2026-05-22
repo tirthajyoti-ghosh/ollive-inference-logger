@@ -24,19 +24,20 @@ export function ProviderSelector({
   onModelChange,
 }: ProviderSelectorProps) {
   const [providers, setProviders] = useState<Record<string, string[]>>({});
+  const [configured, setConfigured] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getProviders()
       .then((data) => {
         setProviders(data.providers);
-        // Auto-select first provider/model if not set
-        const providerKeys = Object.keys(data.providers);
-        if (!provider && providerKeys.length > 0) {
-          const first = providerKeys[0];
+        setConfigured(data.configured || []);
+        const available = (data.configured || []);
+        if (!provider && available.length > 0) {
+          const first = available[0];
           onProviderChange(first);
           const models = data.providers[first];
-          if (models.length > 0) onModelChange(models[0]);
+          if (models?.length) onModelChange(models[0]);
         } else if (provider && !model) {
           const models = data.providers[provider];
           if (models?.length) onModelChange(models[0]);
@@ -82,8 +83,14 @@ export function ProviderSelector({
         </SelectTrigger>
         <SelectContent>
           {providerKeys.map((p) => (
-            <SelectItem key={p} value={p} className="text-xs">
+            <SelectItem
+              key={p}
+              value={p}
+              className="text-xs"
+              disabled={!configured.includes(p)}
+            >
               {p.charAt(0).toUpperCase() + p.slice(1)}
+              {!configured.includes(p) && " (no key)"}
             </SelectItem>
           ))}
         </SelectContent>

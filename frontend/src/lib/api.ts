@@ -70,6 +70,7 @@ export interface ChatResponse {
 
 export interface Providers {
   providers: Record<string, string[]>;
+  configured: string[];
 }
 
 // Dashboard types

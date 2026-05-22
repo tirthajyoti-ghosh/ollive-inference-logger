@@ -38,6 +38,7 @@ export default function ChatPage() {
   const [creating, setCreating] = useState(false);
   const [recents, setRecents] = useState<Conversation[]>([]);
   const [providers, setProviders] = useState<Record<string, string[]>>({});
+  const [configured, setConfigured] = useState<string[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("");
 
@@ -51,11 +52,12 @@ export default function ChatPage() {
     getProviders()
       .then((data) => {
         setProviders(data.providers);
-        const keys = Object.keys(data.providers);
-        if (keys.length > 0) {
-          setSelectedProvider(keys[0]);
-          setProvider(keys[0]);
-          const models = data.providers[keys[0]];
+        setConfigured(data.configured || []);
+        const firstAvailable = (data.configured || []).find((p) => data.providers[p]?.length);
+        if (firstAvailable) {
+          setSelectedProvider(firstAvailable);
+          setProvider(firstAvailable);
+          const models = data.providers[firstAvailable];
           if (models?.length) {
             setSelectedModel(models[0]);
             setModel(models[0]);
@@ -131,17 +133,21 @@ export default function ChatPage() {
               <div className="grid grid-cols-3 gap-3">
                 {providerKeys.map((p) => {
                   const isActive = selectedProvider === p;
+                  const isAvailable = configured.includes(p);
                   return (
                     <button
                       key={p}
-                      onClick={() => handleSelectProvider(p)}
-                      className="relative flex items-center gap-3 p-3.5 rounded-[12px] text-left transition-all cursor-pointer"
+                      onClick={() => isAvailable && handleSelectProvider(p)}
+                      disabled={!isAvailable}
+                      className="relative flex items-center gap-3 p-3.5 rounded-[12px] text-left transition-all"
                       style={{
                         background: isActive ? "var(--olive-soft)" : "var(--surface)",
                         border: `1.5px solid ${isActive ? "var(--olive)" : "var(--border)"}`,
                         boxShadow: isActive
                           ? "0 0 0 3px oklch(0.78 0.06 130 / 0.2)"
                           : "var(--shadow-sm)",
+                        opacity: isAvailable ? 1 : 0.4,
+                        cursor: isAvailable ? "pointer" : "not-allowed",
                       }}
                     >
                       <ProviderIcon name={p} />
@@ -150,10 +156,12 @@ export default function ChatPage() {
                           {p.charAt(0).toUpperCase() + p.slice(1)}
                         </div>
                         <div className="text-[11.5px]" style={{ color: "var(--muted-foreground)" }}>
-                          {providers[p]?.length || 0} model{(providers[p]?.length || 0) !== 1 ? "s" : ""}
+                          {isAvailable
+                            ? `${providers[p]?.length || 0} model${(providers[p]?.length || 0) !== 1 ? "s" : ""}`
+                            : "No API key"}
                         </div>
                       </div>
-                      {isActive && (
+                      {isActive && isAvailable && (
                         <span
                           className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center"
                           style={{ background: "var(--olive)", color: "#fff" }}
