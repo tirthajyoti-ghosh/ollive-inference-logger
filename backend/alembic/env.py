@@ -22,6 +22,12 @@ database_url = os.environ.get(
     "DATABASE_URL",
     "postgresql+asyncpg://ollive:ollive_dev@localhost:5432/ollive",
 )
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif database_url.startswith("postgresql://") and "+asyncpg" not in database_url:
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+if "sslmode=" in database_url:
+    database_url = database_url.split("?")[0] + "?ssl=true"
 config.set_main_option("sqlalchemy.url", database_url)
 
 

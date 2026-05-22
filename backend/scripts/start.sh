@@ -1,13 +1,14 @@
 #!/bin/sh
 set -e
 
-# Render gives postgres:// but SQLAlchemy needs postgresql+asyncpg://
-if echo "$DATABASE_URL" | grep -q '^postgres://'; then
-  export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|^postgres://|postgresql+asyncpg://|')
-fi
-if echo "$DATABASE_URL" | grep -q '^postgresql://'; then
-  export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|^postgresql://|postgresql+asyncpg://|')
-fi
+# Render/Heroku give postgres:// but asyncpg needs postgresql+asyncpg://
+case "$DATABASE_URL" in
+  postgres://*) export DATABASE_URL="postgresql+asyncpg://${DATABASE_URL#postgres://}" ;;
+  postgresql://*) export DATABASE_URL="postgresql+asyncpg://${DATABASE_URL#postgresql://}" ;;
+esac
+
+# asyncpg uses ssl=true, not sslmode=require
+export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|?sslmode=[a-z]*|?ssl=true|')
 
 echo "Running database migrations..."
 alembic upgrade head
