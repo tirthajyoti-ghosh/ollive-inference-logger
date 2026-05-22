@@ -80,7 +80,16 @@ export function Sidebar() {
   const is = (path: string) => pathname === path || pathname.startsWith(path + "/");
   const dashSection = pathname.startsWith("/dashboard");
   const [searchQuery, setSearchQuery] = useState("");
+  const [convoCount, setConvoCount] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Fetch conversation count
+  useEffect(() => {
+    fetch("/api/conversations?offset=0&limit=1")
+      .then((r) => r.json())
+      .then((d) => setConvoCount(d.total ?? 0))
+      .catch(() => {});
+  }, [pathname]);
 
   // ⌘K shortcut
   useEffect(() => {
@@ -177,7 +186,7 @@ export function Sidebar() {
       <nav className="px-3 flex-1 overflow-auto">
         <NavGroup label="Chat">
           <NavItem href="/chat" icon={<MessageSquare size={15} />} label="New chat" active={pathname === "/chat"} />
-          <NavItem href="/conversations" icon={<List size={15} />} label="Conversations" badge="14" active={is("/conversations")} />
+          <NavItem href="/conversations" icon={<List size={15} />} label="Conversations" badge={convoCount > 0 ? String(convoCount) : undefined} active={is("/conversations")} />
         </NavGroup>
 
         <div className="my-3 border-t" style={{ borderColor: "var(--border)" }} />
