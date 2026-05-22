@@ -51,12 +51,7 @@ function renderMarkdown(text: string) {
             <span>{lang || "code"}</span>
             <CopyButton text={code} />
           </div>
-          <pre
-            className="px-4 py-3 text-[12.5px] font-mono leading-relaxed overflow-x-auto"
-            style={{ color: "oklch(0.32 0.02 80)" }}
-          >
-            {code.replace(/\n$/, "")}
-          </pre>
+          <pre className="px-4 py-3 text-[12.5px] font-mono leading-relaxed overflow-x-auto" style={{ color: "oklch(0.32 0.02 80)" }}>{code.replace(/\n$/, "")}</pre>
         </div>
       );
     }

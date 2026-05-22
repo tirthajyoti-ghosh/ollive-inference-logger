@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useStreaming } from "./use-streaming";
+import { useStreaming, type StreamStats } from "./use-streaming";
 import type { Message } from "@/lib/api";
 
 export interface ChatMessage {
@@ -75,11 +75,19 @@ export function useChat(conversationId: string, provider: string, model: string)
             )
           );
         },
-        onDone: (messageId) => {
+        onDone: (messageId, stats?: StreamStats) => {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantId
-                ? { ...m, id: messageId || assistantId, streaming: false }
+                ? {
+                    ...m,
+                    id: messageId || assistantId,
+                    streaming: false,
+                    latency_ms: stats?.latency_ms,
+                    tokens_in: stats?.tokens_in,
+                    tokens_out: stats?.tokens_out,
+                    cost: stats?.cost,
+                  }
                 : m
             )
           );

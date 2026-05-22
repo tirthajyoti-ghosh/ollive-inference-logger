@@ -63,8 +63,12 @@ export default function ConversationPage({
     } else {
       setStreamStartedAt(null);
       setStreamTick(0);
+      // Refresh conversation data after streaming ends to update header stats
+      if (id) {
+        getConversation(id).then((conv) => setConversation(conv)).catch(() => {});
+      }
     }
-  }, [isStreaming]);
+  }, [isStreaming, id]);
 
   const streamingMsg = isStreaming && messages.length > 0 && messages[messages.length - 1].role === "assistant"
     ? messages[messages.length - 1]

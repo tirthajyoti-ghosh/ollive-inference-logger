@@ -2,10 +2,17 @@
 
 import { useCallback, useRef, useState } from "react";
 
+export interface StreamStats {
+  latency_ms?: number;
+  tokens_in?: number;
+  tokens_out?: number;
+  cost?: number;
+}
+
 interface StreamCallbacks {
   onThinking: (token: string) => void;
   onToken: (token: string) => void;
-  onDone: (messageId: string) => void;
+  onDone: (messageId: string, stats?: StreamStats) => void;
   onError: (error: string) => void;
 }
 
@@ -32,6 +39,7 @@ export function useStreaming() {
       setIsStreaming(true);
 
       let pendingDone: string | null = null;
+      let pendingStats: StreamStats | undefined;
 
       const typewrite = (text: string, resolve: () => void) => {
         let pos = 0;
@@ -97,6 +105,12 @@ export function useStreaming() {
                 }
               } else if (data.done) {
                 pendingDone = data.message_id || "";
+                pendingStats = {
+                  latency_ms: data.latency_ms,
+                  tokens_in: data.tokens_in,
+                  tokens_out: data.tokens_out,
+                  cost: data.cost,
+                };
               } else if (data.error) {
                 onError(data.error);
               }
@@ -107,7 +121,7 @@ export function useStreaming() {
         }
 
         if (pendingDone !== null) {
-          onDone(pendingDone);
+          onDone(pendingDone, pendingStats);
         }
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") {

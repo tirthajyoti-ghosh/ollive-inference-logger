@@ -92,17 +92,22 @@ async def chat_stream(
             )
             await chat_service.db.commit()
 
-            # Send final event
-            yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id)})}\n\n"
+            # Estimate tokens from content length (rough: 1 token ≈ 4 chars)
+            est_in_tokens = len(data.content) // 4
+            est_out_tokens = len(full_content) // 4
+            est_total = est_in_tokens + est_out_tokens
+
+            # Send final event with stats
+            yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id), 'latency_ms': stream_duration_ms, 'tokens_in': est_in_tokens, 'tokens_out': est_out_tokens, 'cost': round((est_in_tokens * 3 + est_out_tokens * 15) / 1_000_000, 6)})}\n\n"
 
             # Log inference asynchronously via Redis
             from src.services.llm_providers import LLMResponse
 
             llm_response = LLMResponse(
                 content=full_content,
-                prompt_tokens=0,  # Not available in streaming
-                completion_tokens=0,
-                total_tokens=0,
+                prompt_tokens=est_in_tokens,
+                completion_tokens=est_out_tokens,
+                total_tokens=est_total,
                 model=conversation.model,
                 provider=conversation.provider,
             )
