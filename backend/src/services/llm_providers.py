@@ -19,9 +19,9 @@ PROVIDER_MODELS: dict[str, list[str]] = {
         "claude-haiku-4-5-20251001",
     ],
     "groq": [
-        "llama-3.1-70b-versatile",
+        "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant",
-        "mixtral-8x7b-32768",
+        "gemma2-9b-it",
     ],
     "gemini": [
         "gemini-2.5-flash",
