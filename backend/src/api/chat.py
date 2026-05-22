@@ -97,7 +97,8 @@ async def chat_stream(
             est_out_tokens = len(full_content) // 4
             est_total = est_in_tokens + est_out_tokens
 
-            est_cost = round((est_in_tokens * 3 + est_out_tokens * 15) / 1_000_000, 6)
+            from decimal import Decimal
+            est_cost = Decimal(str(round((est_in_tokens * 3 + est_out_tokens * 15) / 1_000_000, 6)))
 
             # Update conversation totals directly so header refresh sees them
             await chat_service.update_conversation_tokens(
@@ -132,7 +133,7 @@ async def chat_stream(
                     pass
 
             # Send final event with stats
-            yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id), 'latency_ms': stream_duration_ms, 'tokens_in': est_in_tokens, 'tokens_out': est_out_tokens, 'cost': est_cost})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'message_id': str(assistant_msg.id), 'latency_ms': stream_duration_ms, 'tokens_in': est_in_tokens, 'tokens_out': est_out_tokens, 'cost': float(est_cost)})}\n\n"
 
             # Log inference asynchronously via Redis
             from src.services.llm_providers import LLMResponse
