@@ -28,7 +28,7 @@ class WorkerSettings(BaseSettings):
     block_ms: int = 5000
     dead_letter_stream: str = "inference:logs:dead"
     max_retries: int = 3
-    matview_refresh_interval_s: int = 300  # 5 minutes
+    matview_refresh_interval_s: int = 60
 
     model_config = {"env_file": ".env"}
 
