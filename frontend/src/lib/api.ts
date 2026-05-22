@@ -123,8 +123,9 @@ export interface DashboardThroughput {
 }
 
 export interface ErrorBreakdown {
-  type: string;
+  error_type: string;
   count: number;
+  percentage: number;
 }
 
 export interface RecentError {
