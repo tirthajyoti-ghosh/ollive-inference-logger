@@ -70,7 +70,7 @@ export function VolumeChart({ data, loading }: VolumeChartProps) {
   // Detect provider keys from data (anything other than "timestamp" and "value")
   const providerKeys = data.length
     ? Object.keys(data[0]).filter(
-        (k) => k !== "timestamp" && k !== "value"
+        (k) => k !== "timestamp" && k !== "value" && k !== "label"
       )
     : [];
 
