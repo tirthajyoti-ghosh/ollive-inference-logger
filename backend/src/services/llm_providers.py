@@ -103,12 +103,15 @@ class LLMService:
     ) -> AsyncIterator[tuple[str, str]]:
         """Yield (type, text) tuples. type is 'thinking', 'text', or 'usage'."""
         litellm_model = self._litellm_model(provider, model)
-        response = await litellm.acompletion(
-            model=litellm_model,
-            messages=messages,
-            stream=True,
-            stream_options={"include_usage": True},
-        )
+        kwargs: dict = {
+            "model": litellm_model,
+            "messages": messages,
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+        if provider == "gemini" and "2.5" in model:
+            kwargs["thinking"] = {"type": "enabled", "budget_tokens": 8192}
+        response = await litellm.acompletion(**kwargs)
         async for chunk in response:
             # Final chunk: empty choices, usage present
             if hasattr(chunk, "usage") and chunk.usage and (not chunk.choices or not chunk.choices[0].delta):
