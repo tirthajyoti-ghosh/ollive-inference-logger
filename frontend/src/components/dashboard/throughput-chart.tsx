@@ -133,23 +133,17 @@ export function TokenConsumptionChart({ data, loading }: TokenChartProps) {
     );
   }
 
+  const showDots = data.length <= 2;
+
   return (
     <div className="card-lg p-6">
-      {/* Header with legend */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="font-semibold" style={{ fontSize: 13.5, color: "var(--ink)" }}>
           Token Consumption
         </h3>
-        <div className="flex items-center gap-4">
-          {[
-            { label: "Input", color: INFO },
-            { label: "Output", color: OLIVE },
-          ].map((l) => (
-            <div key={l.label} className="flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
-              <span style={{ fontSize: 11, color: "var(--ink-2)", fontWeight: 500 }}>{l.label}</span>
-            </div>
-          ))}
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: OLIVE }} />
+          <span style={{ fontSize: 11, color: "var(--ink-2)", fontWeight: 500 }}>Tokens</span>
         </div>
       </div>
 
@@ -157,11 +151,7 @@ export function TokenConsumptionChart({ data, loading }: TokenChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
             <defs>
-              <linearGradient id="promptGrad2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={INFO} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={INFO} stopOpacity={0.04} />
-              </linearGradient>
-              <linearGradient id="completionGrad2" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="tokenGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={OLIVE} stopOpacity={0.35} />
                 <stop offset="100%" stopColor={OLIVE} stopOpacity={0.04} />
               </linearGradient>
@@ -179,21 +169,13 @@ export function TokenConsumptionChart({ data, loading }: TokenChartProps) {
             <Tooltip content={<ChartTooltip />} />
             <Area
               type="monotone"
-              dataKey="prompt_tokens"
-              stackId="tokens"
-              stroke={INFO}
-              strokeWidth={1.5}
-              fill="url(#promptGrad2)"
-              name="Input"
-            />
-            <Area
-              type="monotone"
-              dataKey="completion_tokens"
-              stackId="tokens"
+              dataKey="value"
               stroke={OLIVE}
               strokeWidth={1.5}
-              fill="url(#completionGrad2)"
-              name="Output"
+              fill="url(#tokenGrad)"
+              name="Tokens"
+              dot={showDots ? { r: 4, fill: OLIVE, stroke: "#fff", strokeWidth: 2 } : false}
+              activeDot={{ r: 3, fill: OLIVE, stroke: "#fff", strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>
