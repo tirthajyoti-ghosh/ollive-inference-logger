@@ -4,7 +4,7 @@ metadata:
   name: ollive-ingress
   namespace: ollive
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: $1
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
@@ -12,14 +12,14 @@ spec:
     - host: ollive.local
       http:
         paths:
-          - path: /api(.*)
+          - path: /api/(.*)
             pathType: ImplementationSpecific
             backend:
               service:
                 name: backend
                 port:
                   number: 8000
-          - path: /health(.*)
+          - path: /health/(.*)
             pathType: ImplementationSpecific
             backend:
               service:
