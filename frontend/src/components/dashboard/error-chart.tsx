@@ -51,7 +51,7 @@ function ChartTooltip({ active, payload, label }: any) {
             style={{ background: entry.color }}
           />
           <span style={{ color: "var(--ink)" }} className="font-mono">
-            {entry.name}: {(Number(entry.value) * 100).toFixed(2)}%
+            {entry.name}: {Number(entry.value)}
           </span>
         </div>
       ))}
@@ -81,7 +81,7 @@ export function ErrorRateChart({ data, loading }: ErrorRateChartProps) {
   return (
     <div className="card-lg p-6">
       <h3 className="font-semibold mb-5" style={{ fontSize: 13.5, color: "var(--ink)" }}>
-        Error Rate Over Time
+        Errors Over Time
       </h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
@@ -105,7 +105,7 @@ export function ErrorRateChart({ data, loading }: ErrorRateChartProps) {
               tick={AXIS_TICK}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(v: number) => `${(v * 100).toFixed(1)}%`}
+              tickFormatter={(v: number) => `${v}`}
             />
             <Tooltip content={<ChartTooltip />} />
             <Area
@@ -116,7 +116,7 @@ export function ErrorRateChart({ data, loading }: ErrorRateChartProps) {
               fill="url(#errGrad)"
               dot={showDots ? { r: 4, fill: ERR_COLOR, stroke: "#fff", strokeWidth: 2 } : false}
               activeDot={{ r: 3, fill: ERR_COLOR, stroke: "#fff", strokeWidth: 2 }}
-              name="Error Rate"
+              name="Errors"
             />
           </AreaChart>
         </ResponsiveContainer>
