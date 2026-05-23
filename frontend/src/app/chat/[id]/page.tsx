@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, use } from "react";
 import Link from "next/link";
 import { getConversation, type Conversation } from "@/lib/api";
 import { useChat } from "@/hooks/use-chat";
-import { MessageBubble } from "@/components/chat/message-bubble";
+import { MessageBubble, ThinkingBlock } from "@/components/chat/message-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { StreamingPlaceholder } from "@/components/chat/streaming-message";
 import {
@@ -193,7 +193,7 @@ export default function ConversationPage({
             );
           })}
 
-          {/* Thinking indicator — show while no content has arrived */}
+          {/* Live thinking block — show while no content has arrived */}
           {isStreaming && streamingMsg && !streamingMsg.content && (
             <div className="flex gap-3 justify-start">
               <div
@@ -202,23 +202,11 @@ export default function ConversationPage({
               >
                 <Sparkles size={14} />
               </div>
-              <div
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-[12px]"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-              >
-                <span className="text-[12.5px]" style={{ color: "var(--muted-foreground)" }}>
-                  {streamingMsg.thinking ? "Thinking..." : "Thinking"}
-                </span>
-                <span className="flex items-center gap-1 px-1">
-                  <span className="dot" />
-                  <span className="dot" />
-                  <span className="dot" />
-                </span>
-                {streamingMsg.thinking && (
-                  <span className="text-[11px] font-mono ml-1" style={{ color: "var(--faint)" }}>
-                    {streamingMsg.thinking.length.toLocaleString()} chars
-                  </span>
-                )}
+              <div className="max-w-[680px]">
+                <ThinkingBlock
+                  text={streamingMsg.thinking || ""}
+                  isStreaming
+                />
               </div>
             </div>
           )}

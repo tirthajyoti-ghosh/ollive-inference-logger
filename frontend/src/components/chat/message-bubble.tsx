@@ -202,7 +202,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function ThinkingBlock({ text, isStreaming }: { text: string; isStreaming?: boolean }) {
+export function ThinkingBlock({ text, isStreaming }: { text: string; isStreaming?: boolean }) {
   const [expanded, setExpanded] = useState(isStreaming ?? false);
 
   return (
