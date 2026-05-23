@@ -1,10 +1,13 @@
+import asyncio
 import json
 import logging
+import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+import aiohttp
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -14,19 +17,51 @@ from src.worker.redactor import DeepRedactor, SimpleRedactor
 
 logger = logging.getLogger(__name__)
 
-# Per-token pricing (provider, model) -> {"input": cost_per_token, "output": cost_per_token}
-PRICING: dict[tuple[str, str], dict[str, float]] = {
-    ("openai", "gpt-4o"): {"input": 2.50 / 1_000_000, "output": 10.00 / 1_000_000},
-    ("openai", "gpt-4o-mini"): {"input": 0.15 / 1_000_000, "output": 0.60 / 1_000_000},
-    ("openai", "gpt-3.5-turbo"): {"input": 0.50 / 1_000_000, "output": 1.50 / 1_000_000},
-    ("anthropic", "claude-sonnet-4-5-20250929"): {"input": 3.00 / 1_000_000, "output": 15.00 / 1_000_000},
-    ("anthropic", "claude-haiku-4-5-20251001"): {"input": 0.80 / 1_000_000, "output": 4.00 / 1_000_000},
-    ("groq", "llama-3.3-70b-versatile"): {"input": 0.59 / 1_000_000, "output": 0.79 / 1_000_000},
-    ("groq", "llama-3.1-8b-instant"): {"input": 0.05 / 1_000_000, "output": 0.08 / 1_000_000},
-    ("gemini", "gemini-2.5-flash"): {"input": 0.15 / 1_000_000, "output": 0.60 / 1_000_000},
-    ("gemini", "gemini-2.5-pro"): {"input": 1.25 / 1_000_000, "output": 10.00 / 1_000_000},
-    ("gemini", "gemini-2.0-flash"): {"input": 0.10 / 1_000_000, "output": 0.40 / 1_000_000},
-}
+HELICONE_COSTS_URL = "https://www.helicone.ai/api/llm-costs"
+PROVIDER_MAP = {"OPENAI": "openai", "ANTHROPIC": "anthropic", "GROQ": "groq", "GOOGLE": "gemini"}
+
+_pricing_cache: dict[tuple[str, str], dict[str, float]] = {}
+_pricing_last_fetched: float = 0
+_PRICING_TTL = 3600
+
+
+async def _fetch_helicone_pricing() -> dict[tuple[str, str], dict[str, float]]:
+    """Fetch model pricing from Helicone's public API."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(HELICONE_COSTS_URL, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status != 200:
+                    logger.warning("Helicone API returned %d", resp.status)
+                    return {}
+                data = await resp.json()
+
+        pricing: dict[tuple[str, str], dict[str, float]] = {}
+        for entry in data.get("data", []):
+            provider = PROVIDER_MAP.get(entry.get("provider", ""), "")
+            model = entry.get("model", "")
+            input_cost = entry.get("input_cost_per_1m")
+            output_cost = entry.get("output_cost_per_1m")
+            if provider and model and input_cost is not None and output_cost is not None:
+                pricing[(provider, model)] = {
+                    "input": input_cost / 1_000_000,
+                    "output": output_cost / 1_000_000,
+                }
+        logger.info("Loaded %d model prices from Helicone", len(pricing))
+        return pricing
+    except Exception as exc:
+        logger.warning("Failed to fetch Helicone pricing: %s", exc)
+        return {}
+
+
+async def get_pricing() -> dict[tuple[str, str], dict[str, float]]:
+    """Return cached pricing, refreshing from Helicone every hour."""
+    global _pricing_cache, _pricing_last_fetched
+    if time.monotonic() - _pricing_last_fetched > _PRICING_TTL or not _pricing_cache:
+        fetched = await _fetch_helicone_pricing()
+        if fetched:
+            _pricing_cache = fetched
+            _pricing_last_fetched = time.monotonic()
+    return _pricing_cache
 
 
 class InferenceLogData(BaseModel):
@@ -105,18 +140,19 @@ class ProcessingResult:
 
 
 def estimate_cost(
-    provider: str, model: str, prompt_tokens: int | None, completion_tokens: int | None
+    provider: str, model: str, prompt_tokens: int | None, completion_tokens: int | None,
+    pricing: dict[tuple[str, str], dict[str, float]],
 ) -> float | None:
-    """Calculate estimated cost from token counts using the PRICING table."""
-    pricing = PRICING.get((provider, model))
-    if pricing is None:
+    """Calculate estimated cost from token counts using Helicone pricing."""
+    rates = pricing.get((provider, model))
+    if rates is None:
         return None
 
     cost = 0.0
     if prompt_tokens:
-        cost += prompt_tokens * pricing["input"]
+        cost += prompt_tokens * rates["input"]
     if completion_tokens:
-        cost += completion_tokens * pricing["output"]
+        cost += completion_tokens * rates["output"]
     return round(cost, 6) if cost > 0 else None
 
 
@@ -135,6 +171,7 @@ class ProcessingPipeline:
         result = ProcessingResult()
         valid_logs: list[dict[str, Any]] = []
         conversation_updates: dict[uuid.UUID, dict[str, Any]] = {}
+        pricing = await get_pricing()
 
         for raw in messages:
             try:
@@ -154,6 +191,7 @@ class ProcessingPipeline:
                         log_data.model,
                         log_data.prompt_tokens,
                         log_data.completion_tokens,
+                        pricing,
                     )
 
                 # 4. Prepare row for batch insert
