@@ -102,6 +102,7 @@ export function useStreaming() {
                   await new Promise<void>((resolve) => typewrite(data.token, resolve));
                 } else {
                   onToken(data.token);
+                  await new Promise((r) => requestAnimationFrame(r));
                 }
               } else if (data.done) {
                 pendingDone = data.message_id || "";
