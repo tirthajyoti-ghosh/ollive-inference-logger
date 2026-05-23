@@ -110,7 +110,7 @@ class LLMService:
             "stream_options": {"include_usage": True},
         }
         if provider == "gemini" and "2.5" in model:
-            kwargs["thinking"] = {"type": "enabled", "budget_tokens": 8192}
+            kwargs["thinking"] = {"type": "disabled", "budget_tokens": 0}
         response = await litellm.acompletion(**kwargs)
         async for chunk in response:
             # Final chunk: empty choices, usage present
