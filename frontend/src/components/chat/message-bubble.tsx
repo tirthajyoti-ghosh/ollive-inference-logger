@@ -119,6 +119,51 @@ function renderMarkdown(text: string) {
         continue;
       }
 
+      // Table: detect rows starting with |
+      if (line.trim().startsWith("|") && line.trim().endsWith("|")) {
+        flushList();
+        const tableRows: string[][] = [];
+        let tj = j;
+        while (tj < lines.length && lines[tj].trim().startsWith("|") && lines[tj].trim().endsWith("|")) {
+          const cells = lines[tj].trim().slice(1, -1).split("|").map((c) => c.trim());
+          tableRows.push(cells);
+          tj++;
+        }
+        j = tj - 1;
+        const hasHeader = tableRows.length >= 2 && tableRows[1].every((c) => /^[-:]+$/.test(c));
+        const header = hasHeader ? tableRows[0] : null;
+        const body = hasHeader ? tableRows.slice(2) : tableRows;
+        elements.push(
+          <div key={`${i}-tbl-${j}`} className="my-3 overflow-x-auto rounded-[8px]" style={{ border: "1px solid var(--border)" }}>
+            <table className="w-full text-[13px]" style={{ borderCollapse: "collapse" }}>
+              {header && (
+                <thead>
+                  <tr style={{ background: "var(--bg-2)" }}>
+                    {header.map((h, hi) => (
+                      <th key={hi} className="px-3 py-2 text-left font-semibold" style={{ color: "var(--ink)", borderBottom: "1px solid var(--border)" }}>
+                        {renderInline(h, `${i}-th-${hi}`)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+              )}
+              <tbody>
+                {body.map((row, ri) => (
+                  <tr key={ri} style={{ borderBottom: ri < body.length - 1 ? "1px solid var(--border)" : undefined }}>
+                    {row.map((cell, ci) => (
+                      <td key={ci} className="px-3 py-2" style={{ color: "var(--ink)" }}>
+                        {renderInline(cell, `${i}-td-${ri}-${ci}`)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+        continue;
+      }
+
       if (line.trim() === "") {
         flushList();
         continue;
