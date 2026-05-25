@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import { Sidebar } from "@/components/layout/sidebar";
+import { BackendGate } from "@/components/layout/backend-gate";
 import "./globals.css";
 
 const geist = Geist({
@@ -28,8 +29,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full flex">
-        <Sidebar />
-        <main className="flex-1 min-h-screen overflow-y-auto">{children}</main>
+        <BackendGate>
+          <Sidebar />
+          <main className="flex-1 min-h-screen overflow-y-auto">{children}</main>
+        </BackendGate>
       </body>
     </html>
   );
