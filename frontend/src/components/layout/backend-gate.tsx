@@ -1,40 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export function BackendGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
+  const wakeRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
-    // Skip gate if backend is localhost (dev mode) or no URL configured
     if (!BACKEND_URL || BACKEND_URL.includes("localhost")) {
       setReady(true);
       return;
     }
 
     let mounted = true;
-    let timer: ReturnType<typeof setTimeout>;
 
-    const ping = async () => {
+    // 1. Wake the backend with an <img> request (bypasses CORS)
+    //    This fires a real browser GET to the backend Render URL,
+    //    which triggers Render's wake-up even if the response isn't an image.
+    const wake = () => {
+      const img = new Image();
+      img.src = `${BACKEND_URL}/health?wake=${Date.now()}`;
+    };
+    wake();
+    wakeRef.current = setInterval(wake, 5000);
+
+    // 2. Poll the proxy endpoint to detect when backend is actually ready
+    const poll = async () => {
       try {
-        // Hit the backend directly — not through the Next.js rewrite.
-        // Direct browser request to the Render URL is what wakes the service.
-        const res = await fetch(`${BACKEND_URL}/health`, {
-          cache: "no-store",
-          mode: "cors",
-        });
+        const res = await fetch("/api/health", { cache: "no-store" });
         if (res.ok && mounted) {
           setReady(true);
+          clearInterval(wakeRef.current);
           return;
         }
       } catch {}
-      if (mounted) timer = setTimeout(ping, 3000);
+      if (mounted) setTimeout(poll, 3000);
     };
+    poll();
 
-    ping();
-    return () => { mounted = false; clearTimeout(timer); };
+    return () => {
+      mounted = false;
+      clearInterval(wakeRef.current);
+    };
   }, []);
 
   if (ready) return <>{children}</>;
