@@ -16,12 +16,11 @@ export function BackendGate({ children }: { children: React.ReactNode }) {
 
     let mounted = true;
 
-    // 1. Wake the backend with an <img> request (bypasses CORS)
-    //    This fires a real browser GET to the backend Render URL,
-    //    which triggers Render's wake-up even if the response isn't an image.
+    // 1. Wake the backend with a no-cors fetch (bypasses CORS blocking).
+    //    The request fires and hits Render's URL (triggering wake-up)
+    //    even though the response is opaque and unreadable.
     const wake = () => {
-      const img = new Image();
-      img.src = `${BACKEND_URL}/health?wake=${Date.now()}`;
+      fetch(`${BACKEND_URL}/health`, { mode: "no-cors", cache: "no-store" }).catch(() => {});
     };
     wake();
     wakeRef.current = setInterval(wake, 5000);
