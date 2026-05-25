@@ -81,7 +81,7 @@ export function Sidebar() {
   const dashSection = pathname.startsWith("/dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [convoCount, setConvoCount] = useState(0);
-  const [apiStatus, setApiStatus] = useState<{ ok: boolean; latencyMs: number | null; waking: boolean }>({ ok: false, latencyMs: null, waking: true });
+  const [apiStatus, setApiStatus] = useState<{ ok: boolean; latencyMs: number | null }>({ ok: false, latencyMs: null });
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Fetch conversation count
@@ -92,28 +92,22 @@ export function Sidebar() {
       .catch(() => {});
   }, [pathname]);
 
-  // Health check ping — retry every 5s while waking, 30s when healthy
+  // Health check ping
   useEffect(() => {
     let mounted = true;
-    let timer: ReturnType<typeof setTimeout>;
     const ping = async () => {
       const start = performance.now();
       try {
         const res = await fetch("/api/health");
         const latencyMs = Math.round(performance.now() - start);
-        if (mounted) {
-          setApiStatus({ ok: res.ok, latencyMs, waking: false });
-          timer = setTimeout(ping, 30_000);
-        }
+        if (mounted) setApiStatus({ ok: res.ok, latencyMs });
       } catch {
-        if (mounted) {
-          setApiStatus((prev) => ({ ok: false, latencyMs: null, waking: prev.waking }));
-          timer = setTimeout(ping, 5_000);
-        }
+        if (mounted) setApiStatus({ ok: false, latencyMs: null });
       }
     };
     ping();
-    return () => { mounted = false; clearTimeout(timer); };
+    const interval = setInterval(ping, 30_000);
+    return () => { mounted = false; clearInterval(interval); };
   }, []);
 
   // ⌘K shortcut
@@ -240,29 +234,21 @@ export function Sidebar() {
           <div className="flex items-center gap-2 min-w-0">
             <span className="relative inline-flex">
               <span
-                className={`w-2 h-2 rounded-full ${!apiStatus.ok && !apiStatus.waking ? "" : "pulse-ok"}`}
+                className={`w-2 h-2 rounded-full ${apiStatus.ok ? "pulse-ok" : ""}`}
                 style={{
                   background: apiStatus.ok
                     ? "oklch(0.62 0.11 150)"
-                    : apiStatus.waking
-                    ? "oklch(0.7 0.12 75)"
                     : "oklch(0.55 0.15 30)",
                 }}
               />
             </span>
             <div className="flex flex-col leading-tight min-w-0">
               <span className="text-[11.5px] font-medium" style={{ color: "var(--ink)" }}>
-                {apiStatus.ok
-                  ? "All systems normal"
-                  : apiStatus.waking
-                  ? "Waking up..."
-                  : "API unreachable"}
+                {apiStatus.ok ? "All systems normal" : "API unreachable"}
               </span>
               <span className="text-[10.5px] truncate font-mono" style={{ color: "var(--muted-foreground)" }}>
                 {apiStatus.ok
                   ? `api · ${apiStatus.latencyMs}ms`
-                  : apiStatus.waking
-                  ? "free tier cold start · ~30s"
                   : "api · retrying..."}
               </span>
             </div>
