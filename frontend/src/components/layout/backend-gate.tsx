@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export function BackendGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
-  const wakeRef = useRef<ReturnType<typeof setInterval>>();
+  const wakeRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   useEffect(() => {
     if (!BACKEND_URL || BACKEND_URL.includes("localhost")) {
