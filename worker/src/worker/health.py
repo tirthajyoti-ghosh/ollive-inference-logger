@@ -22,7 +22,6 @@ async def run_health_server(
     """Start a lightweight HTTP health check server on the given port."""
     app = web.Application()
     app.router.add_get("/health", health_handler)
-    app.router.add_route("HEAD", "/health", health_handler)
     app["consumer_running"] = True
 
     runner = web.AppRunner(app)
