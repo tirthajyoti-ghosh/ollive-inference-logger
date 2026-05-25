@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export function BackendGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
+  const [showManual, setShowManual] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const wakeRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
+  const reloadIframe = useCallback(() => {
+    if (iframeRef.current) {
+      iframeRef.current.src = `${BACKEND_URL}/health?t=${Date.now()}`;
+    }
+  }, []);
 
   useEffect(() => {
     if (!BACKEND_URL || BACKEND_URL.includes("localhost")) {
@@ -16,16 +24,15 @@ export function BackendGate({ children }: { children: React.ReactNode }) {
 
     let mounted = true;
 
-    // 1. Wake the backend with a no-cors fetch (bypasses CORS blocking).
-    //    The request fires and hits Render's URL (triggering wake-up)
-    //    even though the response is opaque and unreadable.
-    const wake = () => {
-      fetch(`${BACKEND_URL}/health`, { mode: "no-cors", cache: "no-store" }).catch(() => {});
-    };
-    wake();
-    wakeRef.current = setInterval(wake, 5000);
+    // Reload iframe every 5s to keep poking the backend
+    wakeRef.current = setInterval(reloadIframe, 5000);
 
-    // 2. Poll the proxy endpoint to detect when backend is actually ready
+    // Show manual fallback link after 15s
+    const fallbackTimer = setTimeout(() => {
+      if (mounted) setShowManual(true);
+    }, 15000);
+
+    // Poll proxy endpoint to detect when backend is ready
     const poll = async () => {
       try {
         const res = await fetch("/api/health", { cache: "no-store" });
@@ -42,8 +49,9 @@ export function BackendGate({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
       clearInterval(wakeRef.current);
+      clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [reloadIframe]);
 
   if (ready) return <>{children}</>;
 
@@ -52,6 +60,15 @@ export function BackendGate({ children }: { children: React.ReactNode }) {
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: "var(--background)" }}
     >
+      {/* Hidden iframe — real browser navigation that wakes Render */}
+      <iframe
+        ref={iframeRef}
+        src={`${BACKEND_URL}/health`}
+        style={{ position: "absolute", width: 0, height: 0, border: "none", opacity: 0 }}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+
       <div className="flex flex-col items-center gap-4 text-center px-6">
         <div
           className="w-12 h-12 rounded-2xl grid place-items-center"
@@ -92,6 +109,17 @@ export function BackendGate({ children }: { children: React.ReactNode }) {
             connecting to backend...
           </span>
         </div>
+        {showManual && (
+          <a
+            href={`${BACKEND_URL}/health`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 text-[12.5px] font-medium underline underline-offset-2"
+            style={{ color: "var(--olive-fg)" }}
+          >
+            Taking too long? Click here to wake the backend manually
+          </a>
+        )}
       </div>
     </div>
   );
