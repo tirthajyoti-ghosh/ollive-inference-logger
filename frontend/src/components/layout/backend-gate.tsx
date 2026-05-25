@@ -2,16 +2,29 @@
 
 import { useEffect, useState } from "react";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "";
+
 export function BackendGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Skip gate if backend is localhost (dev mode) or no URL configured
+    if (!BACKEND_URL || BACKEND_URL.includes("localhost")) {
+      setReady(true);
+      return;
+    }
+
     let mounted = true;
     let timer: ReturnType<typeof setTimeout>;
 
     const ping = async () => {
       try {
-        const res = await fetch("/api/health", { cache: "no-store" });
+        // Hit the backend directly — not through the Next.js rewrite.
+        // Direct browser request to the Render URL is what wakes the service.
+        const res = await fetch(`${BACKEND_URL}/health`, {
+          cache: "no-store",
+          mode: "cors",
+        });
         if (res.ok && mounted) {
           setReady(true);
           return;
